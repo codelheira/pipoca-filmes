@@ -1,19 +1,44 @@
-import React, { useEffect } from "react"
+import React from "react"
 import { BsBroadcast } from "react-icons/bs"
 import { FaAngleLeft, FaComments, FaLanguage, FaRandom } from "react-icons/fa"
 import { Link, useNavigate } from "react-router-dom"
 import { S } from "./sidebar.style"
 
+// Mapeamento de nomes de exibição para slugs de URL
+const CATEGORIA_SLUGS = {
+  'Ação': 'acao',
+  'Animação': 'animacao',
+  'Aventura': 'aventura',
+  'Comédia': 'comedia',
+  'Crime': 'crime',
+  'Documentário': 'documentario',
+  'Drama': 'drama',
+  'Família': 'familia',
+  'Fantasia': 'fantasia',
+  'Faroeste': 'faroeste',
+  'Ficção Científica': 'ficcao-cientifica',
+  'Guerra': 'guerra',
+  'História': 'historia',
+  'Mistério': 'misterio',
+  'Romance': 'romance',
+  'Terror': 'terror',
+  'Thriller': 'thriller',
+}
+
 const SideBar = ({ open, setOpen }) => {
   const navigate = useNavigate()
+
   const clickHandler = (e) => {
+    const genreName = e.target.innerText
+    const slug = CATEGORIA_SLUGS[genreName] || genreName.toLowerCase()
     setOpen(false)
-    navigate(`/genre/${e.target.innerText.toLowerCase()}`)
+    navigate(`/categoria/${slug}`)
   }
+
   return (
     <S.SideMenu open={open}>
       <S.CloseButton onClick={() => setOpen(false)}>
-        <FaAngleLeft /> Close menu
+        <FaAngleLeft /> Fechar menu
       </S.CloseButton>
       <S.SettingsIcon>
         <S.SettingsItem>
@@ -22,50 +47,51 @@ const SideBar = ({ open, setOpen }) => {
         </S.SettingsItem>
         <S.SettingsItem>
           <FaRandom size={20} color="#cae962" />
-          <p>Random</p>
+          <p>Aleatório</p>
         </S.SettingsItem>
         <S.SettingsItem>
           <FaLanguage size={20} color="#cae962" />
-          <p>Anime name</p>
+          <p>Nome Original</p>
         </S.SettingsItem>
       </S.SettingsIcon>
-      <S.DonateBtn>Donate</S.DonateBtn>
+      <S.DonateBtn>Doe agora</S.DonateBtn>
       <S.CommunityBtn>
         <FaComments size={14} color="#cae962" />
-        Community
+        Comunidade
       </S.CommunityBtn>
       <S.NavList>
         <S.Item>
-          <Link to="/home">Home</Link>
+          <Link to="/">Início</Link>
         </S.Item>
         <S.Item>
-          <Link to="/tv-series">Subbed anime</Link>
+          <Link to="/movies">Filmes</Link>
         </S.Item>
         <S.Item>
-          <Link to="/tv-series">Dubbed anime</Link>
+          <Link to="/tv-series">Séries de TV</Link>
         </S.Item>
         <S.Item>
-          <Link to="/most-popular">Most popular</Link>
+          <Link to="/most-popular">Mais populares</Link>
         </S.Item>
         <S.Item>
-          <Link to="/movies">Movies</Link>
-        </S.Item>
-        <S.Item>
-          <Link to="/tv-series">Tv Series</Link>
-        </S.Item>
-        <S.Item>
-          <p style={{ marginBottom: "1em" }}>Genre</p>
+          <p style={{ marginBottom: "1em", fontWeight: "600", color: "#cae962" }}>Categorias</p>
           <S.GenreList>
-            <S.GenreItem onClick={clickHandler}>Action</S.GenreItem>
-            <S.GenreItem onClick={clickHandler}>Adventure</S.GenreItem>
-            <S.GenreItem onClick={clickHandler}>Cars</S.GenreItem>
-            <S.GenreItem onClick={clickHandler}>Comedy</S.GenreItem>
-            <S.GenreItem onClick={clickHandler}>Dementia</S.GenreItem>
-            <S.GenreItem onClick={clickHandler}>Demons</S.GenreItem>
+            <S.GenreItem onClick={clickHandler}>Ação</S.GenreItem>
+            <S.GenreItem onClick={clickHandler}>Animação</S.GenreItem>
+            <S.GenreItem onClick={clickHandler}>Aventura</S.GenreItem>
+            <S.GenreItem onClick={clickHandler}>Comédia</S.GenreItem>
+            <S.GenreItem onClick={clickHandler}>Crime</S.GenreItem>
+            <S.GenreItem onClick={clickHandler}>Documentário</S.GenreItem>
             <S.GenreItem onClick={clickHandler}>Drama</S.GenreItem>
-            <S.GenreItem onClick={clickHandler}>Ecchi</S.GenreItem>
-            <S.GenreItem onClick={clickHandler}>Fantasy</S.GenreItem>
-            <S.GenreItem onClick={clickHandler}>Game</S.GenreItem>
+            <S.GenreItem onClick={clickHandler}>Família</S.GenreItem>
+            <S.GenreItem onClick={clickHandler}>Fantasia</S.GenreItem>
+            <S.GenreItem onClick={clickHandler}>Faroeste</S.GenreItem>
+            <S.GenreItem onClick={clickHandler}>Ficção Científica</S.GenreItem>
+            <S.GenreItem onClick={clickHandler}>Guerra</S.GenreItem>
+            <S.GenreItem onClick={clickHandler}>História</S.GenreItem>
+            <S.GenreItem onClick={clickHandler}>Mistério</S.GenreItem>
+            <S.GenreItem onClick={clickHandler}>Romance</S.GenreItem>
+            <S.GenreItem onClick={clickHandler}>Terror</S.GenreItem>
+            <S.GenreItem onClick={clickHandler}>Thriller</S.GenreItem>
           </S.GenreList>
         </S.Item>
       </S.NavList>

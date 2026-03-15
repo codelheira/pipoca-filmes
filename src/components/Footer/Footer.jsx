@@ -12,46 +12,16 @@ import {
   FaComments,
   FaBell,
 } from 'react-icons/fa'
-import logo from '../../assets/images/logo.png'
 
-const letters = [
-  'All',
-  '#',
-  '0-9',
-  'A',
-  'B',
-  'C',
-  'D',
-  'E',
-  'F',
-  'G',
-  'H',
-  'I',
-  'J',
-  'K',
-  'L',
-  'M',
-  'N',
-  'O',
-  'P',
-  'Q',
-  'R',
-  'S',
-  'T',
-  'U',
-  'V',
-  'W',
-  'X',
-  'Y',
-  'Z',
-]
+
 const Footer = () => {
   return (
     <F.Footer>
       <F.Top>
-        <F.Logo>
-          <F.LogoImg src={logo} alt="logo" />
-        </F.Logo>
+        <F.LogoContainer>
+          <F.LogoImg src="/logo.png" alt="logo" />
+          <F.SiteName>Pipoca Filmes</F.SiteName>
+        </F.LogoContainer>
         <F.SocialIcons>
           <F.Item style={{ backgroundColor: '#6f85d5' }}>
             <FaDiscord />
@@ -67,29 +37,16 @@ const Footer = () => {
           </F.Item>
         </F.SocialIcons>
       </F.Top>
-      <F.ListAz>
-        <F.TextWrapper>
-          <F.TextLeft>A-Z LIST</F.TextLeft>
-          <F.TextRight>
-            Searching anime order by alphabet name A to Z.
-          </F.TextRight>
-        </F.TextWrapper>
-        <F.ButtonList>
-          {letters.map((item, idx) => (
-            <F.Button key={idx}>{item}</F.Button>
-          ))}
-        </F.ButtonList>
-      </F.ListAz>
+
       <F.Links>
-        <F.LinkItem>Terms of service</F.LinkItem>
-        <F.LinkItem>DCMA</F.LinkItem>
-        <F.LinkItem>Contact</F.LinkItem>
+        <F.LinkItem>Termos de serviço</F.LinkItem>
+        <F.LinkItem>DMCA</F.LinkItem>
+        <F.LinkItem>Contato</F.LinkItem>
       </F.Links>
       <F.AboutTxt>
-        Zoro does not store any files on our server, we only linked to the media
-        which is hosted on 3rd party services.
+        A Pipoca Filmes não armazena arquivos em nosso servidor, apenas indexamos conteúdo hospedado em serviços de terceiros.
       </F.AboutTxt>
-      <F.CopyrightTxt>© Zoro.to</F.CopyrightTxt>
+      <F.CopyrightTxt>© Pipoca Filmes</F.CopyrightTxt>
     </F.Footer>
   )
 }

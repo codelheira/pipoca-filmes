@@ -29,12 +29,15 @@ F.Top = styled.div`
     padding: 0.5em 0;
   }
 `
-F.Logo = styled.div`
-  display: block;
+F.LogoContainer = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.75em;
   height: 40px;
 
   @media only screen and (max-width: 578px) {
     height: 34px;
+    gap: 0.5em;
   }
   @media only screen and (max-width: 480px) {
     display: none;
@@ -43,6 +46,18 @@ F.Logo = styled.div`
 F.LogoImg = styled.img`
   width: auto;
   height: 100%;
+`
+F.SiteName = styled.span`
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #fff;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  
+  @media only screen and (max-width: 578px) {
+    font-size: 1rem;
+  }
 `
 
 F.SocialIcons = styled.div`
@@ -70,74 +85,7 @@ F.Item = styled.div`
   border-radius: 50px;
 `
 
-F.ListAz = styled.div`
-  display: flex;
-  gap: 1em;
-  flex-direction: column;
 
-  @media only screen and (max-width: 480px) {
-    display: none;
-  }
-`
-F.TextWrapper = styled.div`
-  display: flex;
-  align-items: flex-start;
-  gap: 2em;
-  color: #fff;
-
-  @media only screen and (max-width: 759px) {
-    align-items: center;
-    justify-content: center;
-  }
-`
-F.TextLeft = styled.p`
-  display: inline-block;
-  padding-right: 2em;
-  margin-right: 20px;
-  border-right: 1px solid rgba(255, 255, 255, 0.3);
-  line-height: 1em;
-  font-size: 1.1em;
-  font-weight: 600;
-
-  @media only screen and (max-width: 759px) {
-    font-size: 0.9em;
-  }
-`
-F.TextRight = styled.p`
-  font-size: 12px;
-
-  @media only screen and (max-width: 759px) {
-    font-size: 10px;
-  }
-`
-
-F.ButtonList = styled.ul`
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1em;
-
-  @media only screen and (max-width: 759px) {
-    align-items: center;
-    justify-content: center;
-  }
-  @media only screen and (max-width: 480px) {
-    display: none;
-  }
-`
-F.Button = styled.li`
-  color: #fff;
-  font-size: 14px;
-  padding: 4px 8px;
-  display: inline-block;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 3px;
-  cursor: pointer;
-
-  &:hover {
-    color: #111;
-    background: #cae962;
-  }
-`
 F.Links = styled.div`
   display: flex;
   gap: 2em;

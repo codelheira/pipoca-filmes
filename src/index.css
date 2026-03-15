@@ -21,6 +21,17 @@
     background: rgba(0, 0, 0, .2);
 }
 
+/* Mobile scrollbar - thinner */
+@media screen and (max-width: 768px) {
+    ::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    ::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, .2);
+    }
+}
+
 ul {
     list-style: none;
 }
@@ -36,9 +47,23 @@ input {
 }
 
 body {
-
     background-color: hsl(228, 7%, 14%);
     position: relative;
+    overflow-x: hidden; /* Prevent horizontal scroll on mobile */
+    -webkit-tap-highlight-color: transparent; /* Remove tap highlight */
+}
+
+/* Better touch targets on mobile */
+@media screen and (max-width: 768px) {
+    button, a {
+        min-height: 44px;
+        min-width: 44px;
+    }
+    
+    /* Prevent zoom on double tap */
+    * {
+        touch-action: manipulation;
+    }
 }
 
 label {

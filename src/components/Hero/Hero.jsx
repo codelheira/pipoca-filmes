@@ -19,8 +19,8 @@ SwiperCore.use([Navigation, Pagination, Scrollbar, A11y, Autoplay]);
 import useTrendingAnime from "../../hooks/useTrendingAnime";
 import { format } from "date-fns";
 
-const Hero = () => {
-  const { data, isFetched } = useTrendingAnime();
+const Hero = ({ slides }) => {
+  if (!slides || slides.length === 0) return null;
 
   return (
     <H.Swiper
@@ -30,52 +30,53 @@ const Hero = () => {
       }}
       direction="horizontal"
       loop={true}
-      autoplay={{ delay: 3000 }}
-      modules={[Pagination]}
+      autoplay={{ delay: 5000 }}
+      modules={[Pagination, Autoplay]}
       className="swiper"
       navigation={{
         nextEl: ".btn-next",
         prevEl: ".btn-prev",
       }}
     >
-      {isFetched &&
-        data.data.map((item, idx) => (
-          <H.Slides key={idx}>
-            <H.ImgContainer>
-              <H.Img src={item.attributes.coverImage.large} />
-            </H.ImgContainer>
-            <H.Content>
-              <H.Rank>
-                <p>#{idx + 1} Spotlight</p>
-              </H.Rank>
-              <H.Title>{item.attributes.canonicalTitle}</H.Title>
-              <H.Icons>
-                <H.Icon>
-                  <FaPlayCircle size={12} />
-                  {item.attributes.showType}
-                </H.Icon>
-                <H.Icon>
-                  <FaClock size={12} /> {item.attributes.episodeLength}m
-                </H.Icon>
+      {slides.map((item, idx) => (
+        <H.Slides key={idx}>
+          <H.ImgContainer>
+            <H.Img src={item.backdrop || item.capa} alt={item.nome} />
+          </H.ImgContainer>
+          <H.Content>
+            <H.Rank>
+              <p>Destaque #{idx + 1}</p>
+            </H.Rank>
+            <H.Title>{item.nome}</H.Title>
+            <H.Icons>
+              <H.Icon>
+                <FaPlayCircle size={12} />
+                {item.tipo === 'filme' ? 'Filme' : 'Série'}
+              </H.Icon>
+              {item.ano && (
                 <H.Icon>
                   <FaCalendar size={12} />
-                  {format(new Date(item.attributes.startDate), "MMM d, y")}
+                  {item.ano}
                 </H.Icon>
-                <H.IconSpan>HD</H.IconSpan>
-              </H.Icons>
-              <H.Description>{item.attributes.description}</H.Description>
-              <H.WatchBtn>
-                <H.WatchLink to="/watch">
-                  <FaPlayCircle />
-                  Watch Now
-                </H.WatchLink>
-                <H.DetailLink to="/detail">
-                  Detail <FaChevronRight size={12} />
-                </H.DetailLink>
-              </H.WatchBtn>
-            </H.Content>
-          </H.Slides>
-        ))}
+              )}
+              <H.IconSpan>HD</H.IconSpan>
+              {item.nota && (
+                <H.IconSpan style={{ background: '#cae962', color: '#000', fontWeight: 'bold' }}>
+                  {item.nota}
+                </H.IconSpan>
+              )}
+            </H.Icons>
+            <H.Description>{item.sinopse || item.info}</H.Description>
+            <H.WatchBtn>
+              <H.WatchLink to={item.tipo === 'serie' ? `/watch/serie/${item.slug}` : `/watch/${item.tipo}/${item.slug}`}>
+                <FaPlayCircle />
+                Assistir Agora
+              </H.WatchLink>
+              {/* Detalhes link removed as Watch link serves both purposes often or add separate route */}
+            </H.WatchBtn>
+          </H.Content>
+        </H.Slides>
+      ))}
       <div className="btn-prev">
         <FaChevronLeft />
       </div>

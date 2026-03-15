@@ -1,5 +1,5 @@
 import React, { Suspense, lazy } from "react"
-import { BrowserRouter, Routes, Route } from "react-router-dom"
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom"
 import Error from "./pages/Error"
 import HomeSkeleton from "./components/Loader/HomeSkeleton"
 import Skeleton from "./components/Loader/Skeleton"
@@ -7,31 +7,30 @@ import Skeleton from "./components/Loader/Skeleton"
 const Home = lazy(() => import("./pages/Home"))
 const Airing = lazy(() => import("./pages/Airing"))
 const Genre = lazy(() => import("./pages/Genre"))
-const Main = lazy(() => import("./pages/Main"))
+
 const Movies = lazy(() => import("./pages/Movies"))
 const Popular = lazy(() => import("./pages/Popular"))
 const Series = lazy(() => import("./pages/Series"))
-const Watch = lazy(() => import("./pages/Watch"))
+import Watch from "./pages/Watch"
+const WatchSerie = lazy(() => import("./pages/WatchSerie"))
+const Search = lazy(() => import("./pages/Search"))
+const Categoria = lazy(() => import("./pages/Categoria"))
+import ScrollToTop from "./components/ScrollToTop"
+
 const App = () => {
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <Routes>
         <Route
           path="/"
-          element={
-            <Suspense>
-              <Main />
-            </Suspense>
-          }
-        />
-        <Route
-          path="/home"
           element={
             <Suspense fallback={<HomeSkeleton />}>
               <Home />
             </Suspense>
           }
         />
+        <Route path="/home" element={<Navigate to="/" replace />} />
         <Route
           path="/movies"
           element={
@@ -65,7 +64,15 @@ const App = () => {
           }
         />
         <Route
-          path="/watch/:animeName"
+          path="/watch/serie/:slug"
+          element={
+            <Suspense fallback={<Skeleton />}>
+              <WatchSerie />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/watch/:tipo/:slug"
           element={
             <Suspense fallback={<Skeleton />}>
               <Watch />
@@ -77,6 +84,22 @@ const App = () => {
           element={
             <Suspense fallback={<Skeleton />}>
               <Genre />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/busca"
+          element={
+            <Suspense fallback={<Skeleton />}>
+              <Search />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/categoria/:categoriaSlug"
+          element={
+            <Suspense fallback={<Skeleton />}>
+              <Categoria />
             </Suspense>
           }
         />

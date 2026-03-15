@@ -8,6 +8,9 @@ M.MainWrapper = styled.div`
   @media screen and (max-width: 1199px) {
     flex-direction: column;
   }
+  @media screen and (max-width: 576px) {
+    padding: 0.5em;
+  }
 `
 M.Heading = styled.h2`
   color: #cae962;

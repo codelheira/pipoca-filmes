@@ -13,27 +13,47 @@ import {
 } from 'react-icons/fa'
 import { BsBroadcast } from 'react-icons/bs'
 import { N } from './navbar.style'
-import logo from '../../assets/images/logo.png'
 import zorosmall from '../../assets/images/zoro-small.jpeg'
 import SideBar from './SideBar'
-import { useLocation } from 'react-router-dom'
+import { useNavigate, useLocation, Link } from 'react-router-dom'
 import useDebounce from '../../hooks/useDebounce'
 import { useSearchAnime } from '../../hooks/useAnime'
-import { format } from 'date-fns'
 import Spinner from '../Spinner/Spinner'
+import { GoogleLogin } from '@react-oauth/google'
+import { useAuth } from '../../context/AuthContext'
+import styled from 'styled-components'
 
 const NavBar = () => {
   const [searchValue, setSearchValue] = useState('')
+  const [isSearching, setIsSearching] = useState(false)
+  const navigate = useNavigate()
   const [open, setOpen] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
   const [fixed, setFixed] = useState(null)
   const [toggleSearch, setToggleSearch] = useState(false)
+  const { user, loginWithGoogle, logout } = useAuth()
 
   const debouncedSearchedValue = useDebounce(searchValue, 600)
   const { data, isLoading } = useSearchAnime(debouncedSearchedValue)
 
+  const handleBlur = () => {
+    // Pequeno delay para permitir o clique nos resultados
+    setTimeout(() => {
+      setIsSearching(false)
+    }, 200)
+  }
+
   const location = useLocation()
   const locationPath = location.pathname.slice(1)
+
+  const handleSearch = (e) => {
+    e.preventDefault()
+    if (searchValue.trim().length >= 2) {
+      navigate(`/busca?q=${searchValue}`)
+      setToggleSearch(false)
+    }
+  }
+
   useEffect(() => {
     if (open) {
       document.body.classList.add('body-hidden')
@@ -58,7 +78,7 @@ const NavBar = () => {
   }, [open, isScrolled])
 
   useEffect(() => {
-    if (locationPath === 'home') {
+    if (locationPath === '') {
       setFixed(true)
     } else {
       setFixed(false)
@@ -77,40 +97,45 @@ const NavBar = () => {
           onClick={() => setOpen(true)}
         />
         <SideBar open={open} setOpen={setOpen} />
-        <N.Logo to="/">
-          <N.LogoImg src={logo} alt="logo" />
-        </N.Logo>
-        <N.SearchForm>
+        <N.LogoContainer to="/">
+          <N.LogoImg src="/logo.png" alt="logo" />
+          <N.SiteName>Pipoca Filmes</N.SiteName>
+        </N.LogoContainer>
+        <N.SearchForm onSubmit={handleSearch}>
           <N.Input
-            placeholder="Search anime..."
+            placeholder="O que vai assistir?"
             value={searchValue}
             onChange={(e) => setSearchValue(e.target.value)}
+            onFocus={() => setIsSearching(true)}
+            onBlur={handleBlur}
           />
           <N.SearchIcon>
             <FaSearch size={16} />
           </N.SearchIcon>
-          <N.Filter>Filter</N.Filter>
-          <N.SearchedListBox>
-            {searchValue.length > 1 && isLoading && <Spinner />}
-            {searchValue.length > 1 &&
-              debouncedSearchedValue.length > 1 &&
-              data &&
-              data.map((item, idx) => (
-                <N.SearchItem key={idx}>
-                  <N.SearchItemImg src={item.images.jpg.image_url} />
-                  <N.SearchItemDetails>
-                    <N.SearchItemTitle>{item.title}</N.SearchItemTitle>
-                    <N.SearchItemSmallTitle>
-                      {item.title}
-                    </N.SearchItemSmallTitle>
-                    <N.SearchItemAiredTime>
-                      {format(new Date(item.aired.from), 'MMM d, y')} •{' '}
-                      <span style={{ color: 'white' }}> {item.type}</span>
-                    </N.SearchItemAiredTime>
-                  </N.SearchItemDetails>
-                </N.SearchItem>
-              ))}
-          </N.SearchedListBox>
+          <N.Filter>Filtro</N.Filter>
+          {isSearching && (
+            <N.SearchedListBox>
+              {searchValue.length >= 3 && isLoading && <Spinner />}
+              {searchValue.length >= 3 &&
+                debouncedSearchedValue.length >= 3 &&
+                data &&
+                data.map((item, idx) => (
+                  <N.SearchItem
+                    key={idx}
+                    to={item.type === 'serie' ? `/watch/serie/${item.slug}` : `/watch/${item.tipo || item.type}/${item.slug}`}
+                    onClick={() => setSearchValue('')}
+                  >
+                    <N.SearchItemImg src={item.images.jpg.image_url} />
+                    <N.SearchItemDetails>
+                      <N.SearchItemTitle>{item.title}</N.SearchItemTitle>
+                      <N.SearchItemAiredTime>
+                        {item.year} • {item.genre ? `${item.genre} • ` : ''} <span style={{ color: 'white' }}> {item.type}</span>
+                      </N.SearchItemAiredTime>
+                    </N.SearchItemDetails>
+                  </N.SearchItem>
+                ))}
+            </N.SearchedListBox>
+          )}
         </N.SearchForm>
         <N.SocialIcons>
           <N.Item style={{ backgroundColor: '#6f85d5' }}>
@@ -133,17 +158,17 @@ const NavBar = () => {
           </N.SettingsItem>
           <N.SettingsItem>
             <FaRandom size={20} color="#cae962" />
-            <p>Random</p>
+            <p>Aleatório</p>
           </N.SettingsItem>
           <N.SettingsItem>
             <FaLanguage size={20} color="#cae962" />
-            <p>Anime name</p>
+            <p>Nome Original</p>
           </N.SettingsItem>
           <N.SettingsItem>
             <FaComments size={20} color="#cae962" />
             <p>Watch2gether</p>
           </N.SettingsItem>
-          <N.Button>Donate</N.Button>
+          <N.Button>Doe agora</N.Button>
         </N.SettingsIcon>
       </div>
       {/* notification and profile  */}
@@ -154,47 +179,75 @@ const NavBar = () => {
             active={toggleSearch ? 1 : 0}
           />
           {toggleSearch && (
-            <N.SearchToggle>
+            <N.SearchToggle onSubmit={handleSearch}>
               <N.SearchContent>
                 <N.ToggleInput
-                  placeholder="Search anime..."
+                  placeholder="O que vai assistir?"
                   value={searchValue}
                   onChange={(e) => setSearchValue(e.target.value)}
+                  onFocus={() => setIsSearching(true)}
+                  onBlur={handleBlur}
                 />
                 <N.ToggleSearchIcon>
                   <FaSearch size={16} />
                 </N.ToggleSearchIcon>
               </N.SearchContent>
-              <N.SearchedListBox>
-                {searchValue.length > 1 && isLoading && <Spinner />}
-                {searchValue.length > 1 &&
-                  debouncedSearchedValue.length > 1 &&
-                  data &&
-                  data.map((item, idx) => (
-                    <N.SearchItem key={idx}>
-                      <N.SearchItemImg src={item.images.jpg.image_url} />
-                      <N.SearchItemDetails>
-                        <N.SearchItemTitle>{item.title}</N.SearchItemTitle>
-                        <N.SearchItemSmallTitle>
-                          {item.title}
-                        </N.SearchItemSmallTitle>
-                        <N.SearchItemAiredTime>
-                          {format(new Date(item.aired.from), 'MMM d, y')} •{' '}
-                          <span style={{ color: 'white' }}> {item.type}</span>
-                        </N.SearchItemAiredTime>
-                      </N.SearchItemDetails>
-                    </N.SearchItem>
-                  ))}
-              </N.SearchedListBox>
+              {isSearching && (
+                <N.SearchedListBox>
+                  {searchValue.length >= 3 && isLoading && <Spinner />}
+                  {searchValue.length >= 3 &&
+                    debouncedSearchedValue.length >= 3 &&
+                    data &&
+                    data.map((item, idx) => (
+                      <N.SearchItem
+                        key={idx}
+                        to={item.type === 'serie' ? `/watch/serie/${item.slug}` : `/watch/${item.type}/${item.slug}`}
+                        onClick={() => {
+                          setSearchValue('')
+                          setToggleSearch(false)
+                        }}
+                      >
+                        <N.SearchItemImg src={item.images.jpg.image_url} />
+                        <N.SearchItemDetails>
+                          <N.SearchItemTitle>{item.title}</N.SearchItemTitle>
+                          <N.SearchItemAiredTime>
+                            {item.year} • {item.genre ? `${item.genre} • ` : ''} <span style={{ color: 'white' }}> {item.type}</span>
+                          </N.SearchItemAiredTime>
+                        </N.SearchItemDetails>
+                      </N.SearchItem>
+                    ))}
+                </N.SearchedListBox>
+              )}
             </N.SearchToggle>
           )}
         </N.ProfileItem>
         <N.ProfileItem>
           <FaBell />
         </N.ProfileItem>
-        <N.ProfileItem>
-          <N.ProfileImg src={zorosmall} alt="" />
-        </N.ProfileItem>
+        {user ? (
+          <N.ProfileItem onClick={logout} title={`Logado como ${user.name} (Clique para sair)`}>
+            <N.ProfileImg src={user.picture} alt={user.name} />
+          </N.ProfileItem>
+        ) : (
+          <>
+            {/* 
+              Implementação do Google Login (Comentado até que as credenciais sejam configuradas em .env)
+              <div style={{ display: 'flex', alignItems: 'center', marginLeft: '5px' }}>
+                <GoogleLogin
+                  onSuccess={loginWithGoogle}
+                  onError={() => console.log('Login Failed')}
+                  useOneTap
+                  type="icon"
+                  shape="circle"
+                  theme="filled_black"
+                />
+              </div> 
+            */}
+            <N.ProfileItem>
+              <N.ProfileImg src={zorosmall} alt="Profile" />
+            </N.ProfileItem>
+          </>
+        )}
       </N.Profile>
     </N.Nav>
   )

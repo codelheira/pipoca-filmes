@@ -21,8 +21,8 @@ const ShareButton = ({ borderRadius = true }) => {
   return (
     <ShareBtn borderRadius={borderRadius}>
       <div style={{ marginLeft: '20px' }}>
-        <p>Share Zoro</p>
-        <span style={{ color: '#ccc' }}> to your friends</span>
+        <p>Compartilhe a Pipoca Filmes</p>
+        <span style={{ color: '#ccc' }}> com seus amigos</span>
       </div>
     </ShareBtn>
   )

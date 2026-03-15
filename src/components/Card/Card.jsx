@@ -26,9 +26,6 @@ const Card = ({ data }) => {
     >
       <C.Poster>
         <C.Image src={data.entry.images.jpg.image_url} />
-        <C.InfoL>
-          <C.BtnL>SUB</C.BtnL> <C.BtnL>DUB</C.BtnL>
-        </C.InfoL>
         <C.InfoR>
           <C.BtnR>Ep {data.episodes[0].mal_id}</C.BtnR>
         </C.InfoR>

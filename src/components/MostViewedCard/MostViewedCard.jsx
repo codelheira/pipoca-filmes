@@ -18,7 +18,7 @@ const MostViewedCard = () => {
             checked={option === 'today'}
             onChange={onChange}
           />
-          <label htmlFor="today">Today</label>
+          <label htmlFor="today">Hoje</label>
         </M.Wrapper>
         <M.Wrapper>
           <M.RadioBtn
@@ -28,7 +28,7 @@ const MostViewedCard = () => {
             checked={option === 'week'}
             onChange={onChange}
           />
-          <label htmlFor="week">Week</label>
+          <label htmlFor="week">Semana</label>
         </M.Wrapper>
         <M.Wrapper>
           <M.RadioBtn
@@ -38,7 +38,7 @@ const MostViewedCard = () => {
             checked={option === 'month'}
             onChange={onChange}
           />
-          <label htmlFor="month">Month</label>
+          <label htmlFor="month">Mês</label>
         </M.Wrapper>
       </M.Nav>
       <Content option={option} />

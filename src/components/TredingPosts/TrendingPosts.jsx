@@ -30,7 +30,7 @@ const TrendingPosts = () => {
               height={30}
               style={{ borderRadius: '50%' }}
             />
-            <p>Zoro</p>
+            <p>Pipoca</p>
           </T.CardProfile>
         </T.Card>
       ))}

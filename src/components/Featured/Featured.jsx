@@ -1,15 +1,13 @@
 import React from 'react'
 import Card from './Card'
 import { F } from './featured.style'
-import { airing, mostfavorite, mostpopular, upcoming } from './data'
+const Featured = ({ releases, series }) => {
+  if (!releases && !series) return null;
 
-const Featured = () => {
   return (
     <F.Container>
-      <Card name="Top Airing" data={airing} />
-      <Card name="Most Popular" data={mostpopular} />
-      <Card name="Most Favorite" data={mostfavorite} />
-      <Card name="Upcoming" data={upcoming} />
+      {releases && releases.length > 0 && <Card name="Lançamentos 2026" data={releases.slice(0, 5)} link="/movies" />}
+      {series && series.length > 0 && <Card name="Séries Populares" data={series.slice(0, 5)} link="/tv-series" />}
     </F.Container>
   )
 }

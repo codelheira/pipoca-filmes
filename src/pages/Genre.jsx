@@ -8,27 +8,39 @@ import MostViewedCard from '../components/MostViewedCard/MostViewedCard'
 import NavBar from '../components/NavBar/NavBar'
 import ShareButton from '../components/ShareButton'
 import { useGenre } from '../hooks/useAnime'
+import Skeleton from '../components/Loader/Skeleton'
 
 const Genre = () => {
   const params = useParams()
   const genre = params.genreName
-  const { data, isFetched } = useGenre({ genre })
+  const { data, isFetched, isLoading } = useGenre({ genre })
+
+  if (isLoading) {
+    return (
+      <>
+        <NavBar />
+        <Skeleton />
+        <Footer />
+      </>
+    )
+  }
+
   return (
     <>
       <NavBar />
       <ShareButton borderRadius={false} />
       <M.MainWrapper>
         <M.Main>
-          <M.Heading>{genre[0].toUpperCase() + genre.slice(1)} Anime</M.Heading>
+          <M.Heading>Gênero: {genre[0].toUpperCase() + genre.slice(1)}</M.Heading>
           <M.MovieList>
             {isFetched &&
-              data.map((item, idx) => <CardTwo key={idx} data={item} />)}
+              data?.map((item, idx) => <CardTwo key={idx} data={item} />)}
           </M.MovieList>
         </M.Main>
         <M.Aside>
-          <M.Heading>Most Viewed</M.Heading>
+          <M.Heading>Mais Vistos</M.Heading>
           <MostViewedCard />
-          <M.Heading>Genres</M.Heading>
+          <M.Heading>Gêneros</M.Heading>
           <GenreCard />
         </M.Aside>
       </M.MainWrapper>

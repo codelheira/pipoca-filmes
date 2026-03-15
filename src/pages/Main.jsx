@@ -1,29 +1,24 @@
 import React, { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { M } from './main.style'
-import logo from '../assets/images/logo.png'
 import zoro from '../assets/images/zoro.png'
 import zorosmall from '../assets/images/zoro-small.jpeg'
 import { FaSearch, FaBars, FaArrowCircleRight, FaComment } from 'react-icons/fa'
 import ShareButton from '../components/ShareButton'
 import { useAiring, usePopular } from '../hooks/useAnime'
 
-const anime = [
-  'Chainsaw Man',
-  'One Piece',
-  'Bleach: Thousand-Year Blood War Arc',
-  'Naruto: Shippuden',
-  'Blue Lock',
-  'Bleach',
-  'The Eminence in Shadow',
-  'My Hero Academia Season 6',
-  'Boruto: Naruto Next Generations',
-  'Naruto',
-]
-
 const Main = () => {
+  const [searchValue, setSearchValue] = useState('')
+  const navigate = useNavigate()
   const [isOpen, setIsOpen] = useState(false)
   const { data } = useAiring()
+
+  const handleSearch = (e) => {
+    e.preventDefault()
+    if (searchValue.trim().length >= 2) {
+      navigate(`/busca?q=${searchValue}`)
+    }
+  }
 
   const clickHandler = () => {
     setIsOpen(!isOpen)
@@ -33,7 +28,7 @@ const Main = () => {
       <M.Nav>
         <M.Ul isOpen={isOpen}>
           <M.Li>
-            <Link to="/home" onClick={clickHandler}>
+            <Link to="/" onClick={clickHandler}>
               Home
             </Link>
           </M.Li>
@@ -65,11 +60,15 @@ const Main = () => {
       </M.Nav>
       <M.Banner>
         <M.Left>
-          <M.Logo src={logo} />
-          <M.Wrapper>
-            <M.Input placeholder="Search anime..." />
+          <M.Logo src="/logo.png" />
+          <M.Wrapper as="form" onSubmit={handleSearch}>
+            <M.Input
+              placeholder="O que vai assistir?"
+              value={searchValue}
+              onChange={(e) => setSearchValue(e.target.value)}
+            />
             <div>
-              <M.Button>
+              <M.Button type="submit">
                 <FaSearch />
               </M.Button>
             </div>
@@ -91,7 +90,7 @@ const Main = () => {
         </M.Right>
       </M.Banner>
       <M.Container>
-        <M.Action to="/home">
+        <M.Action to="/">
           View Full Site <FaArrowCircleRight />
         </M.Action>
 
@@ -99,34 +98,20 @@ const Main = () => {
         <M.BoxWrapper>
           <M.BoxLeft>
             <h1 style={{ color: '#fff', fontSize: '28px' }}>
-              Zoro.to - The best site to watch anime online for Free
+              Pipoca Filmes - O melhor site para assistir online de graça
             </h1>
             <p>
-              Do you know that according to Google, the monthly search volume
-              for anime related topics is up to over 1 Billion times? Anime is
-              famous worldwide and it is no wonder we've seen a sharp rise in
-              the number of free anime streaming sites. <br></br> Just like free
-              online movie streaming sites, anime watching sites are not created
-              equally, some are better than the rest, so we've decided to build
-              Zoro.to to be one of the best free anime streaming site for all
-              anime fans on the world.
+              Você sabia que, de acordo com o Google, o volume mensal de buscas por filmes e séries relacionados a anime ultrapassa 1 bilhão? Pipoca Filmes foi criado para ser um dos melhores sites de streaming gratuitos para todos os fãs no mundo.
             </p>
             <p>
-              Do you know that according to Google, the monthly search volume
-              for anime related topics is up to over 1 Billion times? Anime is
-              famous worldwide and it is no wonder we've seen a sharp rise in
-              the number of free anime streaming sites. <br></br> Just like free
-              online movie streaming sites, anime watching sites are not created
-              equally, some are better than the rest, so we've decided to build
-              Zoro.to to be one of the best free anime streaming site for all
-              anime fans on the world.
+              Projetamos o Pipoca Filmes para oferecer uma experiência premium, rápida e focada no que o usuário deseja assistir, com uma biblioteca sempre atualizada e qualidade garantida.
             </p>
           </M.BoxLeft>
           <M.BoxRight>
             <M.Card>
               <M.CardInfo>
                 <div style={{ display: 'flex', gap: '1em' }}>
-                  <p>#General</p> <p>2 hours ago</p>
+                  <p>#Geral</p> <p>2 horas atrás</p>
                 </div>
                 <div
                   style={{ display: 'flex', alignItems: 'center', gap: '.3em' }}
@@ -135,10 +120,9 @@ const Main = () => {
                   <p>44</p>
                 </div>
               </M.CardInfo>
-              <M.CardTitle>taco bell nacho fries are trash</M.CardTitle>
+              <M.CardTitle>Pipoca Filmes é o melhor!</M.CardTitle>
               <M.CardText>
-                they dont taste that great ngl i like em but most of the time
-                the fries are cold and its hard to enjoy
+                A nova interface ficou incrível e a velocidade de carregamento está sensacional. Parabéns à equipe!
               </M.CardText>
               <M.CardProfile>
                 <img
@@ -148,14 +132,14 @@ const Main = () => {
                   height={30}
                   style={{ borderRadius: '50%' }}
                 />
-                <p>Zoro</p>
+                <p>Pipoca</p>
               </M.CardProfile>
             </M.Card>
           </M.BoxRight>
         </M.BoxWrapper>
         <M.Footer>
-          <p>©2021 Zoro.to. All rights reserved.</p>
-          <p>Mangareader - Read Manga Online For FREE</p>
+          <p>©2024 Pipoca Filmes. Todos os direitos reservados.</p>
+          <p>Pipoca Filmes - Assista Filmes e Séries Online Grátis</p>
         </M.Footer>
       </M.Container>
     </>

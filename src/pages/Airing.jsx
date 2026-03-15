@@ -7,25 +7,37 @@ import MostViewedCard from '../components/MostViewedCard/MostViewedCard'
 import NavBar from '../components/NavBar/NavBar'
 import ShareButton from '../components/ShareButton'
 import { useAiring } from '../hooks/useAnime'
+import Skeleton from '../components/Loader/Skeleton'
 
 const Airing = () => {
-  const { data, isFetched } = useAiring()
+  const { data, isFetched, isLoading } = useAiring()
+
+  if (isLoading) {
+    return (
+      <>
+        <NavBar />
+        <Skeleton />
+        <Footer />
+      </>
+    )
+  }
+
   return (
     <>
       <NavBar />
       <ShareButton borderRadius={false} />
       <M.MainWrapper>
         <M.Main>
-          <M.Heading>Top Airing</M.Heading>
+          <M.Heading>Em Exibição</M.Heading>
           <M.MovieList>
             {isFetched &&
-              data.data.map((item, idx) => <CardTwo key={idx} data={item} />)}
+              data?.data?.map((item, idx) => <CardTwo key={idx} data={item} />)}
           </M.MovieList>
         </M.Main>
         <M.Aside>
-          <M.Heading>Most Viewed</M.Heading>
+          <M.Heading>Mais Vistos</M.Heading>
           <MostViewedCard />
-          <M.Heading>Genres</M.Heading>
+          <M.Heading>Gêneros</M.Heading>
           <GenreCard />
         </M.Aside>
       </M.MainWrapper>

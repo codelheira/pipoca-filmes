@@ -90,6 +90,32 @@ C.Poster = styled.div`
   }
 `;
 
+C.Rate = styled.span`
+  background: linear-gradient(135deg, #cae962 0%, #aff22f 100%);
+  color: #000;
+  padding: 2px 4px;
+  border-radius: 5px;
+  font-size: 11px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+
+  &::before {
+    content: '★';
+    font-size: 10px;
+  }
+
+  &:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 15px rgba(202, 233, 98, 0.4);
+  }
+`;
+
 C.Image = styled.img`
   position: absolute;
   width: 100%;
@@ -183,4 +209,18 @@ C.MovieInfo = styled.p`
   -webkit-line-clamp: 1;
   -webkit-box-orient: vertical;
   overflow: hidden;
+`;
+
+C.Tag = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  background: linear-gradient(90deg, #ff4b1f 0%, #ff9068 100%);
+  color: white;
+  padding: 4px 8px;
+  font-size: 10px;
+  font-weight: bold;
+  border-bottom-right-radius: 8px;
+  z-index: 10;
+  box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
 `;

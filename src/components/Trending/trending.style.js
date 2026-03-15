@@ -34,23 +34,4 @@ T.Heading = styled.h1`
     font-size: 18px;
   }
 `
-T.ShareBox = styled.div`
-  background-color: #121315;
-  display: flex;
-  align-items: center;
-  width: 100%;
-  height: 100px;
-  margin-bottom: -4px;
-  position: relative;
-  padding: 20px 20px;
-  color: #cae962;
-  font-size: 14px;
-`
-T.Gif = styled.img`
-  width: 80px;
-  height: 80px;
 
-  @media screen and (max-width: 575px) {
-    display: none;
-  }
-`

@@ -5,8 +5,8 @@ import { S } from './swiper.style'
 import { FaChevronLeft, FaChevronRight } from 'react-icons/fa'
 import useTrendingAnime from '../../hooks/useTrendingAnime'
 
-const MultiSwiper = () => {
-  const { data, isFetched } = useTrendingAnime()
+const MultiSwiper = ({ items, showNumber = true }) => {
+  if (!items || items.length === 0) return null;
 
   return (
     <S.SwiperContainer>
@@ -39,22 +39,26 @@ const MultiSwiper = () => {
           prevEl: '.btn-prevTwo',
         }}
       >
-        {isFetched &&
-          data.data.map((item, idx) => (
-            <S.SwiperSlide key={idx}>
-              <S.Item>
+        {items.map((item, idx) => (
+          <S.SwiperSlide key={idx}>
+            <S.Item>
+              {showNumber && (
                 <S.Number>
                   <S.SpanNum>
                     {idx + 1 >= 10 ? idx + 1 : '0' + (idx + 1)}
                   </S.SpanNum>
-                  <S.ItemName>{item.attributes.canonicalTitle}</S.ItemName>
+                  <S.ItemName>{item.nome}</S.ItemName>
                 </S.Number>
-                <S.LinkImg to="/home">
-                  <S.SwiperImg src={item.attributes.posterImage.original} />
-                </S.LinkImg>
-              </S.Item>
-            </S.SwiperSlide>
-          ))}
+              )}
+              <S.LinkImg
+                to={item.tipo === 'serie' ? `/watch/serie/${item.slug}` : `/watch/${item.tipo}/${item.slug}`}
+              >
+                {item.tag && <S.Tag>{item.tag}</S.Tag>}
+                <S.SwiperImg src={item.capa} alt={item.nome} />
+              </S.LinkImg>
+            </S.Item>
+          </S.SwiperSlide>
+        ))}
       </S.Swiper>
       <S.NavBtn>
         <div className="btn-nextTwo">

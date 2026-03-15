@@ -20,10 +20,10 @@ export default () => {
                 <C.ProfileImg src={avatar} />
                 <C.ProfileDetails>
                   <C.Name>Shinobi Leaf</C.Name>
-                  <C.Time>- a minute ago</C.Time>
+                  <C.Time>- agora mesmo</C.Time>
                 </C.ProfileDetails>
               </C.Profile>
-              <C.Comment>Peak episode man wow </C.Comment>
+              <C.Comment>O Melhor site que já usei!</C.Comment>
               <C.AnimeName>Naruto</C.AnimeName>
             </C.Item>
           </C.SwiperSlide>

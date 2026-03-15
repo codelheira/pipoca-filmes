@@ -15,7 +15,7 @@ S.SideMenu = styled.div`
   margin-bottom: 2000px;
   overflow-y: auto;
   gap: 1em;
-  z-index: 5;
+  z-index: 1100;
   transition: transform 500ms ease;
 
   @media only screen and (max-width: 860px) {

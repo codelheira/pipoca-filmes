@@ -11,17 +11,17 @@ const MainContainer = () => {
   return (
     <M.MainWrapper>
       <M.Main>
-        <M.Heading>Latest Episode</M.Heading>
+        <M.Heading>Lançamentos</M.Heading>
         <M.MovieList>
           {isFetched && data.map((item, idx) => <Card key={idx} data={item} />)}
         </M.MovieList>
       </M.Main>
       <M.Aside>
-        <M.Heading>Genres</M.Heading>
+        <M.Heading>Gêneros</M.Heading>
         <GenreCard />
-        <M.Heading>Most Viewed</M.Heading>
+        <M.Heading>Mais Vistos</M.Heading>
         <MostViewedCard />
-        <M.Heading>Trending Posts</M.Heading>
+        <M.Heading>Postagens em Alta</M.Heading>
         <TrendingPosts />
       </M.Aside>
     </M.MainWrapper>

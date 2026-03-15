@@ -57,7 +57,21 @@ F.PosterDiv = styled.div`
   width: 45px;
   height: 60px;
   cursor: pointer;
+  position: relative;
 `
+F.Tag = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  background: linear-gradient(90deg, #ff4b1f 0%, #ff9068 100%);
+  color: white;
+  padding: 2px 4px;
+  font-size: 8px;
+  font-weight: bold;
+  border-bottom-right-radius: 4px;
+  z-index: 10;
+`;
+
 F.Img = styled.img`
   width: 100%;
   height: 100%;
