@@ -15,6 +15,7 @@ import Watch from "./pages/Watch"
 const WatchSerie = lazy(() => import("./pages/WatchSerie"))
 const Search = lazy(() => import("./pages/Search"))
 const Categoria = lazy(() => import("./pages/Categoria"))
+const PlayerDebug = lazy(() => import("./pages/PlayerDebug"))
 import ScrollToTop from "./components/ScrollToTop"
 
 const App = () => {
@@ -100,6 +101,14 @@ const App = () => {
           element={
             <Suspense fallback={<Skeleton />}>
               <Categoria />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/player-debug"
+          element={
+            <Suspense fallback={<Skeleton />}>
+              <PlayerDebug />
             </Suspense>
           }
         />

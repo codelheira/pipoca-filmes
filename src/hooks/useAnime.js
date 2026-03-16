@@ -1,6 +1,7 @@
 import React from 'react'
 import axios from 'axios'
 import { useQuery } from '@tanstack/react-query'
+const API_URL = import.meta.env.VITE_API_BASE_URL || `http://${window.location.hostname}:8000/api`;
 
 export function useLatestEpisode() {
   const TopAiringAnime = async () => {
@@ -15,7 +16,7 @@ export function useLatestEpisode() {
 export function useSeries(page = 1) {
   const fetchSeries = async () => {
     try {
-      const { data } = await axios.get(`http://192.168.15.111:8000/api/series/all?page=${page}`)
+      const { data } = await axios.get(`${API_URL}/series/all?page=${page}`)
 
       // Transforma os items para o formato esperado pelo CardTwo
       const transformedItems = (data.items || []).map(item => ({
@@ -57,7 +58,7 @@ export function useSeries(page = 1) {
 export function useFilmes(page = 1) {
   const fetchFilmes = async () => {
     try {
-      const { data } = await axios.get(`http://192.168.15.111:8000/api/filmes/all?page=${page}`)
+      const { data } = await axios.get(`${API_URL}/filmes/all?page=${page}`)
 
       // Transforma os items para o formato esperado pelo CardTwo
       const transformedItems = (data.items || []).map(item => ({
@@ -147,7 +148,7 @@ export const useSearchAnime = (filter) => {
   const fetchData = async () => {
     try {
       // Usando o nosso novo backend proxy em Python
-      const { data } = await axios.get(`http://192.168.15.111:8000/api/search/${filter}`)
+      const { data } = await axios.get(`${API_URL}/search/${filter}`)
 
       // Mapeando os dados do assistir.app para o formato esperado pelo frontend
       // Como a API externa não parece retornar imagens, usamos um placeholder ou deixamos vazio
@@ -188,7 +189,7 @@ export const useSearchAnime = (filter) => {
 export const useFullSearch = (filter) => {
   const fetchData = async () => {
     try {
-      const { data } = await axios.get(`http://192.168.15.111:8000/api/busca/${filter}`)
+      const { data } = await axios.get(`${API_URL}/busca/${filter}`)
 
       return data.map(item => ({
         title: item.nome,
@@ -231,7 +232,7 @@ export const useFullSearch = (filter) => {
 export const useMovieInfo = (tipo, slug) => {
   const fetchData = async () => {
     try {
-      const { data } = await axios.get(`http://192.168.15.111:8000/api/info/${tipo}/${slug}`)
+      const { data } = await axios.get(`${API_URL}/info/${tipo}/${slug}`)
       return data
     } catch (error) {
       console.error("Erro ao buscar informações do filme:", error)
@@ -248,7 +249,7 @@ export const useMovieInfo = (tipo, slug) => {
 export const useMovieStream = (url, enabled = true) => {
   const fetchData = async () => {
     try {
-      const { data } = await axios.get(`http://192.168.15.111:8000/api/stream?url=${encodeURIComponent(url)}`)
+      const { data } = await axios.get(`${API_URL}/stream?url=${encodeURIComponent(url)}`)
       return data
     } catch (error) {
       console.error("Erro ao buscar stream:", error)
@@ -267,7 +268,7 @@ export const useMovieStream = (url, enabled = true) => {
 export const useCategoria = (categoria, page = 1) => {
   const fetchData = async () => {
     try {
-      const { data } = await axios.get(`http://192.168.15.111:8000/api/categoria/${categoria}?page=${page}`)
+      const { data } = await axios.get(`${API_URL}/categoria/${categoria}?page=${page}`)
 
       // Transforma os items para o formato esperado pelo CardTwo
       const transformedItems = (data.items || []).map(item => ({
@@ -308,7 +309,7 @@ export const useCategoria = (categoria, page = 1) => {
 export const useHomeContent = () => {
   const fetchData = async () => {
     try {
-      const { data } = await axios.get('http://192.168.15.111:8000/api/home')
+      const { data } = await axios.get(`${API_URL}/home`)
       return data
     } catch (error) {
       console.error("Erro ao buscar home:", error)
@@ -326,7 +327,7 @@ export const useHomeContent = () => {
 export const useSerieDetails = (slug) => {
   const fetchData = async () => {
     try {
-      const { data } = await axios.get(`http://192.168.15.111:8000/api/serie/${slug}`)
+      const { data } = await axios.get(`${API_URL}/serie/${slug}`)
       return data
     } catch (error) {
       console.error("Erro ao buscar detalhes da série:", error)
@@ -344,7 +345,7 @@ export const useSerieDetails = (slug) => {
 export const useSerieSeason = (slug, seasonNum) => {
   const fetchData = async () => {
     try {
-      const { data } = await axios.get(`http://192.168.15.111:8000/api/serie/${slug}/temporada/${seasonNum}`)
+      const { data } = await axios.get(`${API_URL}/serie/${slug}/temporada/${seasonNum}`)
       return data
     } catch (error) {
       console.error("Erro ao buscar temporada da série:", error)
@@ -362,7 +363,7 @@ export const useSerieSeason = (slug, seasonNum) => {
 export const useSerieEpisode = (slug, seasonNum, episodeNum) => {
   const fetchData = async () => {
     try {
-      const { data } = await axios.get(`http://192.168.15.111:8000/api/serie/${slug}/temporada/${seasonNum}/episodio/${episodeNum}`)
+      const { data } = await axios.get(`${API_URL}/serie/${slug}/temporada/${seasonNum}/episodio/${episodeNum}`)
       return data
     } catch (error) {
       console.error("Erro ao buscar episódio da série:", error)

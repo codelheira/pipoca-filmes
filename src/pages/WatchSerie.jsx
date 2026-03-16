@@ -10,8 +10,9 @@ import Skeleton from '../components/Loader/Skeleton'
 import ShareButton from '../components/ShareButton'
 import Discussion from '../components/Discussion/Discussion'
 import { createPortal } from 'react-dom'
-import { W } from './watch.style' // Reusando o PipocaPlayer se possível, mas vou definir um local aqui ou importar
+import { W } from './watch.style' 
 import PipocaPlayer from '../components/Player/PipocaPlayer'
+import { useTransmission } from '../context/TransmissionContext'
 
 // Reusando PipocaPlayer de Watch.jsx seria o ideal. 
 // Mas para evitar problemas de importação circular ou dependência, vou definir os componentes base aqui.
@@ -57,10 +58,26 @@ const WatchSerie = () => {
     // Ao carregar a série, seleciona a primeira temporada
     useEffect(() => {
         if (serie?.temporadas?.length > 0) {
-            // Se tiver temporadas mas nenhuma selecionada (ex: recém aberto)
             if (!selectedSeason) setSelectedSeason(serie.temporadas[0].numero)
         }
     }, [serie])
+
+    const { joinTransmission } = useTransmission()
+
+    useEffect(() => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('transmission');
+        if (token) {
+            joinTransmission(token).then(success => {
+                if (success) {
+                    setPlaying(true);
+                    setTimeout(() => {
+                        document.getElementById('player-area')?.scrollIntoView({ behavior: 'smooth' });
+                    }, 300);
+                }
+            });
+        }
+    }, []);
 
     const handleEpisodeClick = (epNum) => {
         setSelectedEpisode(epNum)
@@ -225,18 +242,27 @@ const WatchSerie = () => {
             {(playing && selectedEpisode) && (
                 <S.PlayerSection id="player-area">
                     <W.PlayerSection style={{ padding: 0, margin: 0, maxWidth: 'none' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5em' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5em', flexWrap: 'wrap', gap: '10px' }}>
                             <h2 style={{ color: '#fff', fontSize: '1.4rem' }}>
                                 Assistindo: <span style={{ color: '#cae962' }}>T{selectedSeason} E{selectedEpisode} - {episodeData?.titulo}</span>
                             </h2>
-                            <ShareButton borderRadius={true} />
+                            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                                <ShareButton borderRadius={true} />
+                            </div>
                         </div>
 
-                        <S.PlayerWrapper>
+                        <S.PlayerWrapper style={{ position: 'relative' }}>
+                            <TransmissionBadge />
+                            <GuestOverlay />
                             {isLoadingEpisode || isLoadingStream ? (
                                 <S.PlayerPlaceholder><p>Carregando player...</p></S.PlayerPlaceholder>
                             ) : streamData?.url ? (
-                                <PipocaPlayer streamData={streamData} poster={serie?.backdrop || serie?.poster} slug={`${slug}_s${selectedSeason}_e${selectedEpisode}`} />
+                                <PipocaPlayer 
+                                    streamData={streamData} 
+                                    poster={serie?.backdrop || serie?.poster} 
+                                    slug={`${slug}_s${selectedSeason}_e${selectedEpisode}`} 
+                                    mediaTitle={`${serie?.name} - T${selectedSeason}E${selectedEpisode}`}
+                                />
                             ) : episodeData?.player_url ? (
                                 <iframe
                                     src={episodeData.player_url}

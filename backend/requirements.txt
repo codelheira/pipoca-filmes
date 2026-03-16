@@ -1,6 +1,0 @@
-fastapi
-uvicorn
-httpx
-google-auth
-python-jose[cryptography]
-python-multipart

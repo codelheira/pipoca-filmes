@@ -299,8 +299,8 @@ W.PlayerWrapper = styled.div`
     box-shadow: 0 30px 60px rgba(0,0,0,0.6);
     border: 1px solid rgba(255, 255, 255, 0.05);
 
-    /* O componente interno deve preencher o wrapper */
-    & > * {
+    /* O componente interno (iframe ou container de player) deve preencher o wrapper */
+    & > iframe, & > div:nth-last-child(1) {
         width: 100%;
         height: 100%;
     }

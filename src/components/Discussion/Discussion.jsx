@@ -122,7 +122,8 @@ const Discussion = ({ tmdbId, tipo }) => {
     const fetchDiscussions = async () => {
       setLoading(true)
       try {
-        const response = await axios.get(`http://192.168.15.111:8000/api/discussions/${tipo}/${tmdbId}`)
+        const API_BASE = import.meta.env.VITE_API_BASE_URL || `http://${window.location.hostname}:8000/api`;
+        const response = await axios.get(`${API_BASE}/discussions/${tipo}/${tmdbId}`)
         setDiscussions(response.data)
       } catch (error) {
         console.error("Erro ao buscar discussões:", error)

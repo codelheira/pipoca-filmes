@@ -6,7 +6,7 @@ import {
   FaClock,
   FaPlayCircle,
 } from "react-icons/fa";
-import SwiperCore, {
+import {
   Navigation,
   Pagination,
   Scrollbar,
@@ -15,7 +15,6 @@ import SwiperCore, {
 } from "swiper";
 import "swiper/swiper-bundle.css";
 import { H } from "./hero.style";
-SwiperCore.use([Navigation, Pagination, Scrollbar, A11y, Autoplay]);
 import useTrendingAnime from "../../hooks/useTrendingAnime";
 import { format } from "date-fns";
 
@@ -31,7 +30,7 @@ const Hero = ({ slides }) => {
       direction="horizontal"
       loop={true}
       autoplay={{ delay: 5000 }}
-      modules={[Pagination, Autoplay]}
+      modules={[Pagination, Autoplay, Navigation, A11y]}
       className="swiper"
       navigation={{
         nextEl: ".btn-next",

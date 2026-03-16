@@ -14,6 +14,7 @@ import axios from 'axios'
 import { createPortal } from 'react-dom'
 import Discussion from '../components/Discussion/Discussion'
 import PipocaPlayer from '../components/Player/PipocaPlayer'
+import { useTransmission } from '../context/TransmissionContext'
 
 // Feature de DLNA Discovery & Cast implementada via Backend Python
 
@@ -36,6 +37,22 @@ const Watch = () => {
   const [playing, setPlaying] = useState(false)
   const [activePlayerUrl, setActivePlayerUrl] = useState(null)
   const [showTrailer, setShowTrailer] = useState(false)
+  const { joinTransmission } = useTransmission()
+
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('transmission');
+    if (token) {
+      joinTransmission(token).then(success => {
+        if (success) {
+          setPlaying(true);
+          setTimeout(() => {
+            document.getElementById('player-area')?.scrollIntoView({ behavior: 'smooth' });
+          }, 300);
+        }
+      });
+    }
+  }, []);
 
   // Mapeamento de nomes de gêneros para slugs de URL
   const CATEGORIA_SLUGS = {
@@ -194,7 +211,7 @@ const Watch = () => {
 
       {playing && (
         <W.PlayerSection id="player-area">
-          <div style={{ marginBottom: '2em' }}>
+          <div style={{ marginBottom: '2em', display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
             <ShareButton borderRadius={true} />
           </div>
 
@@ -214,11 +231,16 @@ const Watch = () => {
             </W.PlayerTabs>
           )}
 
-          <W.PlayerWrapper>
+          <W.PlayerWrapper style={{ position: 'relative' }}>
             {isLoadingStream ? (
               <W.PlayerPlaceholder><p>Carregando stream...</p></W.PlayerPlaceholder>
             ) : streamData?.url ? (
-              <PipocaPlayer streamData={streamData} poster={movie?.backdrop || movie?.poster} slug={slug} />
+              <PipocaPlayer 
+                streamData={streamData} 
+                poster={movie?.backdrop || movie?.poster} 
+                slug={slug} 
+                mediaTitle={movie?.name}
+              />
             ) : (
               <W.PlayerPlaceholder>
                 <p>Ocorreu um erro ao carregar este player. Tente outro.</p>

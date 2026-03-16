@@ -15,6 +15,7 @@
     "chromecast-api": "^0.4.2",
     "date-fns": "^2.29.3",
     "hls.js": "^1.6.15",
+    "idb": "^8.0.3",
     "plyr-react": "^6.0.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
