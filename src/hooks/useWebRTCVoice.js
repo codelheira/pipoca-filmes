@@ -235,6 +235,15 @@ export const useWebRTCVoice = () => {
 
     const handleSignal = useCallback(async (event) => {
         const data = event.detail;
+        
+        // Handle sync commands targeting voice
+        if (data.type === 'force_mute' && data.target_id === localUser?.id) {
+            if (!isMuted) {
+                toggleMute();
+            }
+            return;
+        }
+
         if (data.type !== 'signal') return;
 
         const { from, signalData } = data;
@@ -295,7 +304,8 @@ export const useWebRTCVoice = () => {
             console.error(`[WebRTC] Signal erro de ${from}:`, e); 
         }
 
-    }, [createPeer, flushPendingCandidates, localUser?.id]);
+    }, [createPeer, flushPendingCandidates, localUser?.id, isMuted, toggleMute]);
+
 
 
 

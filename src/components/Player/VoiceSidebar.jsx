@@ -11,7 +11,9 @@ const VoiceSidebar = ({
     localUser, 
     localMutedUsers, 
     onLocalMute,
-    remoteMutedUsers 
+    remoteMutedUsers,
+    role,
+    onForceMute 
 }) => {
     return (
         <P.Sidebar open={open}>
@@ -27,6 +29,7 @@ const VoiceSidebar = ({
                     const isSpeaking = speakingUsers[p.id];
                     const isMe = localUser && (localUser.id === p.id);
                     const isMutedByThemselves = remoteMutedUsers?.[p.id];
+                    const isHost = role === 'host';
                     
                     return (
                         <P.ParticipantItem key={p.id} isSpeaking={isSpeaking}>
@@ -42,15 +45,27 @@ const VoiceSidebar = ({
                                 <span className="role">{p.role}</span>
                             </P.ParticipantInfo>
 
-                            {!isMe && (
-                                <P.MuteToggle 
-                                    muted={localMutedUsers[p.id]} 
-                                    onClick={() => onLocalMute(p.id)}
-                                    title={localMutedUsers[p.id] ? "Ouvir" : "Silenciar (Pra mim)"}
-                                >
-                                    {localMutedUsers[p.id] ? <FaVolumeMute /> : <FaVolumeUp />}
-                                </P.MuteToggle>
-                            )}
+                            <div style={{ display: 'flex', gap: '5px' }}>
+                                {isHost && !isMe && !isMutedByThemselves && (
+                                    <P.MuteToggle 
+                                        onClick={() => onForceMute(p.id)}
+                                        title="Silenciar para todos (Force Mute)"
+                                        style={{ color: '#ef4444' }}
+                                    >
+                                        <FaMicrophoneSlash />
+                                    </P.MuteToggle>
+                                )}
+                                
+                                {!isMe && (
+                                    <P.MuteToggle 
+                                        muted={localMutedUsers[p.id]} 
+                                        onClick={() => onLocalMute(p.id)}
+                                        title={localMutedUsers[p.id] ? "Ouvir" : "Silenciar (Pra mim)"}
+                                    >
+                                        {localMutedUsers[p.id] ? <FaVolumeMute /> : <FaVolumeUp />}
+                                    </P.MuteToggle>
+                                )}
+                            </div>
                         </P.ParticipantItem>
                     );
                 })}
@@ -58,5 +73,6 @@ const VoiceSidebar = ({
         </P.Sidebar>
     );
 };
+
 
 export default VoiceSidebar;

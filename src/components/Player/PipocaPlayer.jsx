@@ -476,7 +476,10 @@ const PipocaPlayer = ({ streamData, poster, slug, mediaTitle }) => {
                 localUser={localUser} localMutedUsers={localMutedUsers} 
                 onLocalMute={handleLocalMute}
                 remoteMutedUsers={remoteMutedUsers}
+                role={role}
+                onForceMute={(targetId) => sendSyncCommand('force_mute', { target_id: targetId })}
             />
+
 
 
             <P.PlayerControls visible={showControls} onClick={e => e.stopPropagation()}>

@@ -226,7 +226,11 @@ export const TransmissionProvider = ({ children }) => {
         
         const payload = { type: command };
         if (timeOrData !== null) {
-            payload.time = timeOrData;
+            if (typeof timeOrData === 'object' && !Array.isArray(timeOrData)) {
+                Object.assign(payload, timeOrData);
+            } else {
+                payload.time = timeOrData;
+            }
         }
         
         if (command === 'guest_ready') {
@@ -234,6 +238,7 @@ export const TransmissionProvider = ({ children }) => {
         } else {
             socketRef.current.emit('sync_command', payload);
         }
+
     };
 
     const sendSignal = (targetId, signalData) => {
