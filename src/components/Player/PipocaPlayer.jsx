@@ -83,6 +83,8 @@ const PipocaPlayer = ({ streamData, poster, slug, mediaTitle }) => {
     const [copied, setCopied] = useState(false);
     const [roomLink, setRoomLink] = useState('');
     const [localMutedUsers, setLocalMutedUsers] = useState({});
+    const [isAutoplayBlocked, setIsAutoplayBlocked] = useState(false);
+
 
     const [skipAnim, setSkipAnim] = useState(null)
     const [isScrubbing, setIsScrubbing] = useState(false)
@@ -280,8 +282,17 @@ const PipocaPlayer = ({ streamData, poster, slug, mediaTitle }) => {
                 if (data.time !== undefined && Math.abs(videoRef.current.currentTime - data.time) > 10) {
                     videoRef.current.currentTime = data.time;
                 }
-                videoRef.current.play().catch(() => {});
-                setIsPlaying(true);
+                const playPromise = videoRef.current.play();
+                if (playPromise !== undefined) {
+                    playPromise.then(() => {
+                        setIsPlaying(true);
+                        setIsAutoplayBlocked(false);
+                    }).catch(error => {
+                        console.warn("[Sync] Play bloqueado pelo Safari:", error);
+                        setIsAutoplayBlocked(true);
+                        setIsPlaying(false);
+                    });
+                }
                 setIsGuestWaitingSync(false);
             } else if (data.type === 'sync_pause') {
                 if (data.time !== undefined) {
@@ -300,11 +311,15 @@ const PipocaPlayer = ({ streamData, poster, slug, mediaTitle }) => {
             } else if (data.type === 'sync_seek') {
                 videoRef.current.currentTime = data.time;
             } else if (data.type === 'sync_time') {
-                if (data.time !== undefined && Math.abs(videoRef.current.currentTime - data.time) > 15) {
+                // Se o player estiver pausado/travado, não adianta fazer seek constante (gera jitter no iPhone)
+                if (videoRef.current.paused || isAutoplayBlocked) return;
+                
+                if (data.time !== undefined && Math.abs(videoRef.current.currentTime - data.time) > 20) {
                     console.log("[Sync] Corrigindo drifting do Guest:", Math.abs(videoRef.current.currentTime - data.time), "s");
                     videoRef.current.currentTime = data.time;
                 }
             } else if (data.type === 'guest_ready') {
+
                 if (role === 'host') {
                     setReadyGuests(prev => {
                         const next = new Set(prev);
@@ -632,14 +647,40 @@ const PipocaPlayer = ({ streamData, poster, slug, mediaTitle }) => {
                 </div>
             )}
 
+            {/* Guest Autoplay/Interaction Overlay */}
+            {isLiveMode && role === 'guest' && isAutoplayBlocked && (
+                <P.BufferContainer visible={true} style={{ pointerEvents: 'auto' }}>
+                    <P.ControlBtn 
+                        onClick={() => {
+                            if (videoRef.current) {
+                                videoRef.current.play().then(() => {
+                                    setIsAutoplayBlocked(false);
+                                    setIsPlaying(true);
+                                }).catch(e => console.error("Ainda bloqueado:", e));
+                            }
+                        }}
+                        style={{ 
+                            background: '#cae962', color: '#000', padding: '15px 30px', 
+                            fontSize: '1.2rem', fontWeight: 'bold', borderRadius: '12px' 
+                        }}
+                    >
+                        <FaPlay style={{ marginRight: '10px' }} /> ENTRAR NA LIVE
+                    </P.ControlBtn>
+                    <P.BufferText style={{ marginTop: '10px', background: 'transparent', border: 'none' }}>
+                        Toque no botão para iniciar a sincronia
+                    </P.BufferText>
+                </P.BufferContainer>
+            )}
+
             {/* Guest Overlay */}
-            {isLiveMode && role === 'guest' && (
+            {isLiveMode && role === 'guest' && !isAutoplayBlocked && (
                 <P.GuestOverlay>
                     <P.GuestMessage>
                         O controle do player está com o Host
                     </P.GuestMessage>
                 </P.GuestOverlay>
             )}
+
 
             <P.BufferContainer visible={isBuffering && isPlaying}>
                 <P.Spinner />
