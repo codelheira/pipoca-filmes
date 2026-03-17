@@ -1,38 +1,34 @@
 export async function onRequest(context) {
-  const { request, next, env } = context;
+  const { request, next } = context;
   const url = new URL(request.url);
   const userAgent = request.headers.get('user-agent') || '';
   
-  // Lista expandida de bots/crawlers
-  const isBot = /WhatsApp|facebookexternalhit|Twitterbot|Slackbot|Discordbot|TelegramBot|Googlebot|bingbot|metatags.io|opengraph.xyz/i.test(userAgent);
+  // Detecção robusta de bots
+  const isBot = /WhatsApp|facebookexternalhit|Twitterbot|Slackbot|Discordbot|TelegramBot|Googlebot|metatags.io|opengraph.xyz/i.test(userAgent);
   
-  console.log(`User-Agent: ${userAgent}, isBot: ${isBot}, path: ${url.pathname}`);
-
-  // Se não for um link de assistir ou não for um bot, deixa o React lidar normalmente
-  if (!isBot || (!url.pathname.startsWith('/watch/filme/') && !url.pathname.startsWith('/watch/serie/'))) {
+  // Só intercepta rotas de filmes/séries para bots
+  const isTargetRoute = url.pathname.includes('/watch/filme/') || url.pathname.includes('/watch/serie/');
+  
+  if (!isBot || !isTargetRoute) {
     return await next();
   }
 
   try {
-    const parts = url.pathname.split('/');
-    const type = parts[2] === 'filme' ? 'filme' : 'serie';
-    const slug = parts[3];
+    // Determina tipo e slug
+    const match = url.pathname.match(/\/watch\/(filme|serie)\/([^/]+)/);
+    if (!match) return await next();
     
-    // URL da API
+    const type = match[1];
+    const slug = match[2];
+    
     const API_BASE = "https://pipoca-backend-jazs.onrender.com/api";
     const infoUrl = `${API_BASE}/${type}/${slug}`;
     
-    console.log(`Fetching metadata from: ${infoUrl}`);
-    
     const apiResponse = await fetch(infoUrl);
-    if (!apiResponse.ok) {
-      console.log(`API Fetch failed with status: ${apiResponse.status}`);
-      return await next();
-    }
+    if (!apiResponse.ok) return await next();
     
     const data = await apiResponse.json();
     
-    // Pega o HTML original
     const originResponse = await next();
     let html = await originResponse.text();
 
@@ -40,9 +36,7 @@ export async function onRequest(context) {
     const description = data.synopsis ? data.synopsis.substring(0, 160) + '...' : 'Assista os melhores filmes e séries no Pipoca Filmes.';
     const image = data.poster || data.backdrop;
 
-    // Tags que serão injetadas
     const metaTags = `
-  <!-- Social Preview Meta Tags -->
   <title>${title}</title>
   <meta name="description" content="${description}">
   <meta property="og:title" content="${title}">
@@ -56,21 +50,19 @@ export async function onRequest(context) {
   <meta name="twitter:image" content="${image}">
   `;
 
-    // Remove o título original e injeta antes de </head>
-    html = html.replace(/<title>.*?<\/title>/, "");
+    // Limpa títulos e injeta tags
+    html = html.replace(/<title>.*?<\/title>/gi, '');
     html = html.replace('</head>', `${metaTags}</head>`);
-
-    console.log(`Injected meta tags for: ${data.name}`);
 
     return new Response(html, {
       headers: {
         'content-type': 'text/html;charset=UTF-8',
-        'x-preview-injected': 'true' // Tag para debug fácil
+        'x-preview-status': 'success',
+        'x-preview-target': slug
       },
     });
 
   } catch (err) {
-    console.error('Error in Social Preview Function:', err);
-    return await next();
+    return new Response(`Error: ${err.message}`, { status: 500 });
   }
 }
