@@ -105,6 +105,14 @@ export const useWebRTCVoice = () => {
                 audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
             }
             const ctx = audioContextRef.current;
+            
+            // Retoma se estiver suspenso (comum em navegadores que aguardam interação)
+            if (ctx.state === 'suspended') {
+                const resume = () => { ctx.resume().catch(e => {}); };
+                window.addEventListener('click', resume, { once: true });
+                window.addEventListener('touchstart', resume, { once: true });
+            }
+
             const analyser = ctx.createAnalyser();
             analyser.fftSize = 256;
             const source = ctx.createMediaStreamSource(stream);
@@ -118,7 +126,10 @@ export const useWebRTCVoice = () => {
                 let sum = 0;
                 for (let i = 0; i < dataArray.length; i++) sum += dataArray[i];
                 const average = sum / dataArray.length;
-                const isSpeaking = average > 15;
+                
+                // Limite reduzido para 10 para ser mais sensível
+                const isSpeaking = average > 10;
+                
                 setSpeakingUsers(prev => {
                     if (prev[userId] !== isSpeaking) return { ...prev, [userId]: isSpeaking };
                     return prev;
@@ -136,15 +147,22 @@ export const useWebRTCVoice = () => {
 
         console.log(`[WebRTC] Flush ${queue.length} candidates para ${peerId}`);
         for (const c of queue) {
-            try { await peer.addIceCandidate(new RTCIceCandidate(c)); } catch (e) {}
+            try { 
+                await peer.addIceCandidate(new RTCIceCandidate(c)); 
+            } catch (e) {
+                console.warn(`[WebRTC] Erro ao adicionar candidate para ${peerId}:`, e);
+            }
         }
         pendingCandidatesRef.current[peerId] = [];
     }, []);
 
-    const createPeer = useCallback((targetId, isInitiator) => {
+    const createPeer = useCallback((targetId, forceInitiator = false) => {
         if (peersRef.current[targetId]) return peersRef.current[targetId];
 
-        console.log(`[WebRTC] Peer ${targetId} | Initiator: ${isInitiator}`);
+        const myId = localUser?.id;
+        const isInitiator = forceInitiator || (myId && myId < targetId);
+
+        console.log(`[WebRTC] Criando Peer ${targetId} | Initiator: ${isInitiator}`);
         const peer = new RTCPeerConnection(ICE_SERVERS);
         peersRef.current[targetId] = peer;
         pendingCandidatesRef.current[targetId] = [];
@@ -156,35 +174,48 @@ export const useWebRTCVoice = () => {
         };
 
         peer.onnegotiationneeded = async () => {
-            if (isInitiator) {
-                try {
-                    const offer = await peer.createOffer();
-                    await peer.setLocalDescription(offer);
-                    sendSignalRef.current(targetId, offer); // Envia o objeto offer direto
-                } catch (e) { console.error("Negotiation error:", e); }
+            try {
+                // Renegociação: permitida para qualquer lado se o estado estiver estável.
+                // Mas geralmente o initiator prefere começar.
+                console.log(`[WebRTC] Negotiation needed para ${targetId}`);
+                const offer = await peer.createOffer();
+                if (peer.signalingState !== "stable") return;
+                
+                await peer.setLocalDescription(offer);
+                sendSignalRef.current(targetId, peer.localDescription);
+            } catch (e) { 
+                console.error(`[WebRTC] Negotiation error para ${targetId}:`, e); 
             }
         };
 
         peer.ontrack = (event) => {
-            console.log(`[WebRTC] Track de ${targetId}`);
-            setAudioStreams(prev => ({ ...prev, [targetId]: event.streams[0] }));
-            setupVAD(targetId, event.streams[0], false);
+            console.log(`[WebRTC] Track recebida de ${targetId}`);
+            const stream = event.streams[0] || new MediaStream([event.track]);
+            setAudioStreams(prev => ({ ...prev, [targetId]: stream }));
+            setupVAD(targetId, stream, false);
         };
 
         if (localStreamRef.current) {
+            console.log(`[WebRTC] Adicionando tracks locais para o peer ${targetId}`);
             localStreamRef.current.getTracks().forEach(track => {
                 peer.addTrack(track, localStreamRef.current);
             });
         }
 
         return peer;
-    }, []);
+    }, [localUser?.id]);
 
     const handleSignal = useCallback(async (event) => {
         const data = event.detail;
         if (data.type !== 'signal') return;
 
         const { from, signalData } = data;
+        const myId = localUser?.id;
+        if (!myId) return;
+
+        // Polite Peer: quem tem o ID maior cede em caso de colisão
+        const isPolite = myId > from;
+
         if (!peersRef.current[from] && (signalData.type === 'offer')) {
             createPeer(from, false);
         }
@@ -194,23 +225,43 @@ export const useWebRTCVoice = () => {
 
         try {
             if (signalData.type === 'offer') {
+                const offerCollision = peer.signalingState !== "stable" || peer.remoteDescription !== null;
+                
+                if (offerCollision && !isPolite) {
+                    console.log(`[WebRTC] Colisão detectada para ${from}. Ignorando oferta (impolite).`);
+                    return;
+                }
+
+                if (offerCollision && isPolite) {
+                    console.log(`[WebRTC] Colisão detectada para ${from}. Fazendo rollback (polite).`);
+                    await peer.setLocalDescription({ type: 'rollback' });
+                }
+
                 await peer.setRemoteDescription(new RTCSessionDescription(signalData));
                 await flushPendingCandidates(from);
+                
                 const answer = await peer.createAnswer();
                 await peer.setLocalDescription(answer);
                 sendSignalRef.current(from, answer);
+                
             } else if (signalData.type === 'answer') {
                 await peer.setRemoteDescription(new RTCSessionDescription(signalData));
                 await flushPendingCandidates(from);
             } else if (signalData.type === 'candidate') {
-                if (peer.remoteDescription) {
-                    await peer.addIceCandidate(new RTCIceCandidate(signalData.candidate));
-                } else {
-                    pendingCandidatesRef.current[from].push(signalData.candidate);
+                try {
+                    if (peer.remoteDescription) {
+                        await peer.addIceCandidate(new RTCIceCandidate(signalData.candidate));
+                    } else {
+                        pendingCandidatesRef.current[from].push(signalData.candidate);
+                    }
+                } catch (e) {
+                    if (!isPolite) console.warn("[WebRTC] Erro ao adicionar ICE candidate (esperado no modo impolite/collision).");
                 }
             }
-        } catch (e) { console.error(`[WebRTC] Signal erro de ${from}:`, e); }
-    }, [createPeer, flushPendingCandidates]);
+        } catch (e) { 
+            console.error(`[WebRTC] Signal erro de ${from}:`, e); 
+        }
+    }, [createPeer, flushPendingCandidates, localUser?.id]);
 
     useEffect(() => {
         window.addEventListener('transmission_msg', handleSignal);

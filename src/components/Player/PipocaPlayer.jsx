@@ -19,6 +19,39 @@ const formatTime = (seconds) => {
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
 }
 
+// Componente interno para gerenciar o áudio remoto de forma declarativa e robusta
+const RemoteAudio = ({ stream, muted, userId }) => {
+    const audioRef = useRef(null);
+    
+    useEffect(() => {
+        const audioEl = audioRef.current;
+        if (!audioEl || !stream) return;
+        
+        if (audioEl.srcObject !== stream) {
+            audioEl.srcObject = stream;
+        }
+        
+        audioEl.play().catch(() => {
+            console.warn(`[WebRTC] Autoplay bloqueado para ${userId} - aguardando interação.`);
+            const resume = () => {
+                audioEl.play().catch(() => {});
+            };
+            document.addEventListener('click', resume, { once: true });
+            document.addEventListener('touchstart', resume, { once: true });
+        });
+    }, [stream, userId]);
+
+    return (
+        <audio 
+            ref={audioRef} 
+            autoPlay 
+            playsInline 
+            muted={muted} 
+            style={{ display: 'none' }} 
+        />
+    );
+};
+
 const PipocaPlayer = ({ streamData, poster, slug, mediaTitle }) => {
     const containerRef = useRef(null)
     const videoRef = useRef(null)
@@ -50,7 +83,6 @@ const PipocaPlayer = ({ streamData, poster, slug, mediaTitle }) => {
     const [copied, setCopied] = useState(false);
     const [roomLink, setRoomLink] = useState('');
     const [localMutedUsers, setLocalMutedUsers] = useState({});
-    const audioElementsRef = useRef({});
 
     const [skipAnim, setSkipAnim] = useState(null)
     const [isScrubbing, setIsScrubbing] = useState(false)
@@ -64,66 +96,8 @@ const PipocaPlayer = ({ streamData, poster, slug, mediaTitle }) => {
     const ignoreNextSyncRef = useRef(false);
     const prevParticipantsCount = useRef(participants?.length || 0);
     const wasPlayingBeforeScrub = useRef(false);
-
-    // Voice Chat Audio Management
-    // Correção 7: Tratamento robusto de autoplay bloqueado pelo navegador.
-    // Quando o navegador recusa o play automático, registra um listener de
-    // interação (click/touch) para tentar novamente assim que o usuário agir.
-    const playAllAudio = useCallback(() => {
-        Object.values(audioElementsRef.current).forEach(audioEl => {
-            if (audioEl.paused && audioEl.srcObject) {
-                audioEl.play().catch(() => {
-                    // Ainda bloqueado — aguarda próxima interação
-                });
-            }
-        });
-    }, []);
-
-    useEffect(() => {
-        if (!isLiveMode) return;
-
-        // Adiciona ou atualiza elementos <audio> para cada stream remoto
-        Object.keys(audioStreams).forEach(userId => {
-            if (!audioElementsRef.current[userId]) {
-                const audio = document.createElement('audio');
-                audio.autoplay = true;
-                audio.playsInline = true;
-                audioElementsRef.current[userId] = audio;
-            }
-
-            const audioEl = audioElementsRef.current[userId];
-            const stream = audioStreams[userId];
-
-            if (audioEl.srcObject !== stream) {
-                audioEl.srcObject = stream;
-            }
-
-            audioEl.muted = !!localMutedUsers[userId];
-
-            audioEl.play().catch(() => {
-                // Correção 7: Autoplay bloqueado — retry na próxima interação do usuário
-                console.warn('[WebRTC] Autoplay bloqueado para', userId, '— aguardando interação.');
-                const resumeOnInteraction = () => {
-                    audioEl.play().catch(() => {});
-                    document.removeEventListener('click', resumeOnInteraction);
-                    document.removeEventListener('touchstart', resumeOnInteraction);
-                };
-                document.addEventListener('click', resumeOnInteraction, { once: true });
-                document.addEventListener('touchstart', resumeOnInteraction, { once: true });
-            });
-        });
-
-        // Remove elementos de usuários que saíram
-        const currentIds = Object.keys(audioStreams);
-        Object.keys(audioElementsRef.current).forEach(id => {
-            if (!currentIds.includes(id)) {
-                audioElementsRef.current[id].pause();
-                audioElementsRef.current[id].srcObject = null;
-                delete audioElementsRef.current[id];
-            }
-        });
-
-    }, [audioStreams, localMutedUsers, isLiveMode]);
+    
+    // Voice Chat Audio Management - Removido useEffect imperativo e substituído por renderização no JSX
 
     const handleLocalMute = (userId) => {
         setLocalMutedUsers(prev => ({
@@ -605,6 +579,20 @@ const PipocaPlayer = ({ streamData, poster, slug, mediaTitle }) => {
                     ignoreNextSyncRef.current = false;
                 }}
             />
+
+            {/* Gerenciamento Declarativo do Áudio Remoto */}
+            {isLiveMode && (
+                <div id="remote-audio-containers" style={{ display: 'none' }}>
+                    {Object.keys(audioStreams).map(userId => (
+                        <RemoteAudio 
+                            key={userId}
+                            userId={userId}
+                            stream={audioStreams[userId]}
+                            muted={!!localMutedUsers[userId]}
+                        />
+                    ))}
+                </div>
+            )}
 
             {/* Guest Overlay */}
             {isLiveMode && role === 'guest' && (
