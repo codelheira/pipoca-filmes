@@ -80,7 +80,8 @@ export const useWebRTCVoice = () => {
             console.error('[WebRTC] Erro mic:', e);
             return false;
         }
-    }, [isMuted, localUser]);
+    }, [localUser]); // Removido isMuted para evitar recriação constante
+
 
     const stopMic = useCallback(() => {
         if (localStreamRef.current) {
@@ -328,11 +329,16 @@ export const useWebRTCVoice = () => {
         // Guests precisam interagir (clicar no botão 'Conectar') para disparar startMic.
         if (isLiveMode && localUser && role === 'host') {
             startMic();
-        } else if (!isLiveMode) {
+        }
+    }, [isLiveMode, !!localUser, role, startMic]);
+
+    useEffect(() => {
+        if (!isLiveMode) {
             stopMic();
         }
         return () => stopMic();
-    }, [isLiveMode, !!localUser, role, startMic, stopMic]);
+    }, [isLiveMode, stopMic]);
+
 
 
     return { isMuted, toggleMute, audioStreams, speakingUsers, micReady, startMic };
