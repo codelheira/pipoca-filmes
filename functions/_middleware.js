@@ -3,18 +3,15 @@ export async function onRequest(context) {
   const url = new URL(request.url);
   const userAgent = request.headers.get('user-agent') || '';
   
-  // Detecção robusta de bots
   const isBot = /WhatsApp|facebookexternalhit|Twitterbot|Slackbot|Discordbot|TelegramBot|Googlebot|metatags.io|opengraph.xyz/i.test(userAgent);
-  
-  // Só intercepta rotas de filmes/séries para bots
-  const isTargetRoute = url.pathname.includes('/watch/filme/') || url.pathname.includes('/watch/serie/');
-  
-  if (!isBot || !isTargetRoute) {
+  const isWatch = url.pathname.includes('/watch/filme/') || url.pathname.includes('/watch/serie/');
+
+  // Se não for bot ou não for página de assistir, segue o fluxo normal
+  if (!isBot || !isWatch) {
     return await next();
   }
 
   try {
-    // Determina tipo e slug
     const match = url.pathname.match(/\/watch\/(filme|serie)\/([^/]+)/);
     if (!match) return await next();
     
@@ -50,19 +47,17 @@ export async function onRequest(context) {
   <meta name="twitter:image" content="${image}">
   `;
 
-    // Limpa títulos e injeta tags
     html = html.replace(/<title>.*?<\/title>/gi, '');
     html = html.replace('</head>', `${metaTags}</head>`);
 
     return new Response(html, {
       headers: {
         'content-type': 'text/html;charset=UTF-8',
-        'x-preview-status': 'success',
-        'x-preview-target': slug
+        'x-preview-injected': 'middleware'
       },
     });
 
   } catch (err) {
-    return new Response(`Error: ${err.message}`, { status: 500 });
+    return await next();
   }
 }
