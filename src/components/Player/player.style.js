@@ -558,4 +558,86 @@ P.MuteToggle = styled.button`
   }
 `;
 
+P.SettingsBtn = styled.button`
+  background: none;
+  border: none;
+  color: #888;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  transition: all 0.2s;
+  
+  &:hover {
+    color: #cae962;
+    transform: rotate(45deg);
+  }
+`;
 
+P.SettingsOverlay = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.85);
+  z-index: 150;
+  backdrop-filter: blur(10px);
+  display: flex;
+  flex-direction: column;
+  padding: 30px;
+  color: #fff;
+`;
+
+P.SettingsGroup = styled.div`
+  margin-bottom: 25px;
+  
+  label {
+    display: block;
+    font-size: 0.85rem;
+    color: #888;
+    margin-bottom: 10px;
+    font-weight: 600;
+  }
+`;
+
+P.Select = styled.select`
+  width: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #fff;
+  padding: 12px;
+  border-radius: 8px;
+  outline: none;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  
+  option {
+    background: #1a1a1c;
+    color: #fff;
+  }
+
+  &:focus {
+    border-color: #cae962;
+  }
+`;
+
+P.SensitivityBar = styled.div`
+  width: 100%;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 10px;
+  position: relative;
+`;
+
+P.SensitivityFill = styled.div`
+  height: 100%;
+  background: linear-gradient(90deg, #cae962, #4ade80);
+  width: ${props => props.level}%;
+  transition: width 0.1s ease;
+  box-shadow: 0 0 10px rgba(202, 233, 98, 0.5);
+`;

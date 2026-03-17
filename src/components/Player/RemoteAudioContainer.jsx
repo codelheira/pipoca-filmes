@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 
-const RemoteAudio = ({ stream, muted, userId, isLocked }) => {
+const RemoteAudio = ({ stream, muted, userId, isLocked, selectedOutput }) => {
     const audioRef = useRef(null);
     
     useEffect(() => {
@@ -10,9 +10,15 @@ const RemoteAudio = ({ stream, muted, userId, isLocked }) => {
         if (audioEl.srcObject !== stream) {
             audioEl.srcObject = stream;
         }
+
+        // Apply SinkId if supported and selected
+        if (selectedOutput && selectedOutput !== 'default' && audioEl.setSinkId) {
+            audioEl.setSinkId(selectedOutput).catch(err => {
+                console.error(`[WebRTC] Erro ao setar saída para ${userId}:`, err);
+            });
+        }
         
         audioEl.play().catch(() => {
-
             console.warn(`[WebRTC] Autoplay bloqueado para ${userId} - aguardando interação.`);
             const resume = () => {
                 audioEl.play().catch(() => {});
@@ -20,7 +26,7 @@ const RemoteAudio = ({ stream, muted, userId, isLocked }) => {
             document.addEventListener('click', resume, { once: true });
             document.addEventListener('touchstart', resume, { once: true });
         });
-    }, [stream, userId]);
+    }, [stream, userId, selectedOutput, isLocked]);
 
     return (
         <audio 
@@ -33,7 +39,8 @@ const RemoteAudio = ({ stream, muted, userId, isLocked }) => {
     );
 };
 
-const RemoteAudioContainer = ({ isLiveMode, audioStreams, localMutedUsers, isLocked }) => {
+const RemoteAudioContainer = ({ isLiveMode, audioStreams, localMutedUsers, isLocked, selectedOutput }) => {
+
     if (!isLiveMode) return null;
 
     return (
@@ -54,8 +61,10 @@ const RemoteAudioContainer = ({ isLiveMode, audioStreams, localMutedUsers, isLoc
                     stream={audioStreams[userId]}
                     muted={!!localMutedUsers[userId]}
                     isLocked={isLocked}
+                    selectedOutput={selectedOutput}
                 />
             ))}
+
         </div>
     );
 };

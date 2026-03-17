@@ -36,7 +36,9 @@ const PipocaPlayer = ({ streamData, poster, slug, mediaTitle }) => {
     // Contexts
     const { isLiveMode, role, sendSyncCommand, participants, createTransmission, leaveTransmission, localUser, connectRoom, remoteMutedUsers } = useTransmission();
 
-    const { isMuted: voiceMuted, toggleMute: toggleVoiceMute, audioStreams, speakingUsers, micReady, startMic } = useWebRTCVoice();
+    const voiceState = useWebRTCVoice();
+    const { isMuted: voiceMuted, toggleMute: toggleVoiceMute, audioStreams, speakingUsers, micReady, startMic } = voiceState;
+
     
     // Sync Hook
     const { 
@@ -419,7 +421,9 @@ const PipocaPlayer = ({ streamData, poster, slug, mediaTitle }) => {
                 audioStreams={audioStreams} 
                 localMutedUsers={localMutedUsers} 
                 isLocked={isAutoplayBlocked && role === 'guest'} 
+                selectedOutput={voiceState.selectedOutput}
             />
+
 
 
             <GuestOverlay 
@@ -478,7 +482,9 @@ const PipocaPlayer = ({ streamData, poster, slug, mediaTitle }) => {
                 remoteMutedUsers={remoteMutedUsers}
                 role={role}
                 onForceMute={(targetId) => sendSyncCommand('force_mute', { target_id: targetId })}
+                voiceState={voiceState}
             />
+
 
 
 

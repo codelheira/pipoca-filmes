@@ -22,10 +22,13 @@ export const useWebRTCVoice = () => {
     const { isLiveMode, participants, localUser, role, sendSignal, sendSyncCommand } = useTransmission();
 
 
-    const [isMuted, setIsMuted] = useState(false);
-    const [audioStreams, setAudioStreams] = useState({}); 
-    const [speakingUsers, setSpeakingUsers] = useState({}); 
     const [micReady, setMicReady] = useState(false);
+    const [devices, setDevices] = useState({ inputs: [], outputs: [] });
+    const [selectedInput, setSelectedInput] = useState('default');
+    const [selectedOutput, setSelectedOutput] = useState('default');
+    const [inputLevel, setInputLevel] = useState(0);
+    const [inputVolume, setInputVolume] = useState(1); // 0 to 1
+
 
     const localStreamRef = useRef(null);
     const peersRef = useRef({}); 
@@ -33,8 +36,30 @@ export const useWebRTCVoice = () => {
     const ignoreOfferRef = useRef({}); // { targetId: boolean }
     const audioContextRef = useRef(null);
     const analysersRef = useRef({});
+    const gainNodeRef = useRef(null);
+    const destinationNodeRef = useRef(null);
     const sendSignalRef = useRef(sendSignal);
+
     const pendingCandidatesRef = useRef({}); 
+    const inputVolumeNodeRef = useRef(null);
+
+    const refreshDevices = useCallback(async () => {
+        try {
+            const allDevices = await navigator.mediaDevices.enumerateDevices();
+            setDevices({
+                inputs: allDevices.filter(d => d.kind === 'audioinput'),
+                outputs: allDevices.filter(d => d.kind === 'audiooutput')
+            });
+        } catch (e) {
+            console.error('[WebRTC] Error enumerating devices:', e);
+        }
+    }, []);
+
+    useEffect(() => {
+        refreshDevices();
+        navigator.mediaDevices.ondevicechange = refreshDevices;
+        return () => { navigator.mediaDevices.ondevicechange = null; };
+    }, [refreshDevices]);
 
     useEffect(() => {
         sendSignalRef.current = sendSignal;
@@ -47,8 +72,13 @@ export const useWebRTCVoice = () => {
         }
 
         try {
+            if (localStreamRef.current) {
+                localStreamRef.current.getTracks().forEach(t => t.stop());
+            }
+
             const stream = await navigator.mediaDevices.getUserMedia({
                 audio: {
+                    deviceId: selectedInput !== 'default' ? { exact: selectedInput } : undefined,
                     echoCancellation: true,
                     noiseSuppression: true,
                     autoGainControl: true,
@@ -56,13 +86,35 @@ export const useWebRTCVoice = () => {
                 video: false,
             });
 
-            localStreamRef.current = stream;
-            stream.getAudioTracks().forEach(track => { track.enabled = !isMuted; });
 
-            if (localUser) setupVAD(localUser.id, stream, true);
+            localStreamRef.current = stream;
             
-            console.log('[WebRTC] Microfone OK.');
+            // Setup Processing (Gain/Volume)
+            if (!audioContextRef.current) {
+                audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            const ctx = audioContextRef.current;
+            const source = ctx.createMediaStreamSource(stream);
+            const gainNode = ctx.createGain();
+            gainNode.gain.value = inputVolume;
+            gainNodeRef.current = gainNode;
+            
+            const dest = ctx.createMediaStreamDestination();
+            destinationNodeRef.current = dest;
+            
+            source.connect(gainNode);
+            gainNode.connect(dest);
+            
+            // Setup VAD on the processed stream for UI
+            if (localUser) setupVAD(localUser.id, dest.stream, true);
+            
+            // O stream "real" que enviamos pros peers agora é o processado
+            const processedStream = dest.stream;
+            processedStream.getAudioTracks().forEach(track => { track.enabled = !isMuted; });
+
+            console.log('[WebRTC] Microfone (Processado) OK.');
             setMicReady(true);
+
 
             // Adiciona tracks aos peers existentes
             for (const targetId in peersRef.current) {
@@ -72,11 +124,12 @@ export const useWebRTCVoice = () => {
                 // Se já temos stream, garante que as tracks estão lá
                 if (!senders.find(s => s.track)) {
                     console.log(`[WebRTC] Adicionando track tardia para ${targetId}`);
-                    stream.getTracks().forEach(track => peer.addTrack(track, stream));
+                    processedStream.getTracks().forEach(track => peer.addTrack(track, processedStream));
                 }
             }
 
             return true;
+
         } catch (e) {
             console.error('[WebRTC] Erro mic:', e);
             return false;
@@ -137,9 +190,12 @@ export const useWebRTCVoice = () => {
 
             const analyser = ctx.createAnalyser();
             analyser.fftSize = 256;
+            
+            // If it's local, we already have a source or gain node chain
             const source = ctx.createMediaStreamSource(stream);
             source.connect(analyser);
             analysersRef.current[userId] = analyser;
+
 
             const checkActivity = () => {
                 if (!analysersRef.current[userId]) return;
@@ -149,6 +205,10 @@ export const useWebRTCVoice = () => {
                 for (let i = 0; i < dataArray.length; i++) sum += dataArray[i];
                 const average = sum / dataArray.length;
                 
+                if (isLocal) {
+                    setInputLevel(Math.min(100, average * 2)); // Normalizing for UI
+                }
+
                 const isSpeaking = average > 10;
                 
                 setSpeakingUsers(prev => {
@@ -157,6 +217,7 @@ export const useWebRTCVoice = () => {
                 });
                 requestAnimationFrame(checkActivity);
             };
+
             requestAnimationFrame(checkActivity);
         } catch (e) { console.error('[WebRTC] VAD error:', e); }
     };
@@ -369,6 +430,12 @@ export const useWebRTCVoice = () => {
 
 
     useEffect(() => {
+        if (gainNodeRef.current && audioContextRef.current) {
+            gainNodeRef.current.gain.setTargetAtTime(inputVolume, audioContextRef.current.currentTime, 0.1);
+        }
+    }, [inputVolume]);
+
+    useEffect(() => {
         if (!isLiveMode) {
             stopMic();
         }
@@ -377,5 +444,11 @@ export const useWebRTCVoice = () => {
 
 
 
-    return { isMuted, toggleMute, audioStreams, speakingUsers, micReady, startMic };
+
+    return { 
+        isMuted, toggleMute, audioStreams, speakingUsers, micReady, startMic,
+        devices, selectedInput, setSelectedInput, selectedOutput, setSelectedOutput,
+        inputLevel, inputVolume, setInputVolume, refreshDevices
+    };
+
 };
