@@ -19,7 +19,7 @@ const ICE_SERVERS = {
 };
 
 export const useWebRTCVoice = () => {
-    const { isLiveMode, participants, localUser, sendSignal } = useTransmission();
+    const { isLiveMode, participants, localUser, role, sendSignal } = useTransmission();
 
     const [isMuted, setIsMuted] = useState(false);
     const [audioStreams, setAudioStreams] = useState({}); 
@@ -324,13 +324,16 @@ export const useWebRTCVoice = () => {
     }, [participants, localUser?.id, micReady, createPeer]);
 
     useEffect(() => {
-        if (isLiveMode && localUser) {
+        // Auto-start apenas para o Host. 
+        // Guests precisam interagir (clicar no botão 'Conectar') para disparar startMic.
+        if (isLiveMode && localUser && role === 'host') {
             startMic();
         } else if (!isLiveMode) {
             stopMic();
         }
         return () => stopMic();
-    }, [isLiveMode, !!localUser]);
+    }, [isLiveMode, !!localUser, role, startMic, stopMic]);
+
 
     return { isMuted, toggleMute, audioStreams, speakingUsers, micReady, startMic };
 };

@@ -139,6 +139,8 @@ const PipocaPlayer = ({ streamData, poster, slug, mediaTitle }) => {
         video.dataset.currentSrc = streamData.url;
 
         const loadVideo = () => {
+            const shouldAutoPlay = !isAutoplayBlocked || role === 'host';
+
             if (streamData.url.includes('.m3u8')) {
                 if (Hls.isSupported()) {
                     if (hlsRef.current) hlsRef.current.destroy();
@@ -148,8 +150,10 @@ const PipocaPlayer = ({ streamData, poster, slug, mediaTitle }) => {
                     hlsRef.current = hls;
 
                     hls.on(Hls.Events.MANIFEST_PARSED, () => {
-                        video.play().catch(() => { });
-                        setIsPlaying(true);
+                        if (shouldAutoPlay) {
+                            video.play().catch(() => { });
+                            setIsPlaying(true);
+                        }
                     });
                     
                     hls.on(Hls.Events.FRAG_LOAD_PROGRESS, (event, data) => {
@@ -162,10 +166,13 @@ const PipocaPlayer = ({ streamData, poster, slug, mediaTitle }) => {
                 }
             } else {
                 video.src = streamData.url;
-                video.play().catch(() => { });
-                setIsPlaying(true);
+                if (shouldAutoPlay) {
+                    video.play().catch(() => { });
+                    setIsPlaying(true);
+                }
             }
         };
+
 
         loadVideo();
         initialSeekDone.current = false;
@@ -406,7 +413,13 @@ const PipocaPlayer = ({ streamData, poster, slug, mediaTitle }) => {
                 }}
             />
 
-            <RemoteAudioContainer isLiveMode={isLiveMode} audioStreams={audioStreams} localMutedUsers={localMutedUsers} />
+            <RemoteAudioContainer 
+                isLiveMode={isLiveMode} 
+                audioStreams={audioStreams} 
+                localMutedUsers={localMutedUsers} 
+                isLocked={isAutoplayBlocked && role === 'guest'} 
+            />
+
 
             <GuestOverlay 
                 isLiveMode={isLiveMode} role={role} 

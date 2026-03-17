@@ -1,17 +1,18 @@
 import React, { useEffect, useRef } from 'react';
 
-const RemoteAudio = ({ stream, muted, userId }) => {
+const RemoteAudio = ({ stream, muted, userId, isLocked }) => {
     const audioRef = useRef(null);
     
     useEffect(() => {
         const audioEl = audioRef.current;
-        if (!audioEl || !stream) return;
+        if (!audioEl || !stream || isLocked) return;
         
         if (audioEl.srcObject !== stream) {
             audioEl.srcObject = stream;
         }
         
         audioEl.play().catch(() => {
+
             console.warn(`[WebRTC] Autoplay bloqueado para ${userId} - aguardando interação.`);
             const resume = () => {
                 audioEl.play().catch(() => {});
@@ -24,7 +25,6 @@ const RemoteAudio = ({ stream, muted, userId }) => {
     return (
         <audio 
             ref={audioRef} 
-            autoPlay 
             playsInline 
             webkit-playsinline="true"
             muted={muted} 
@@ -33,7 +33,7 @@ const RemoteAudio = ({ stream, muted, userId }) => {
     );
 };
 
-const RemoteAudioContainer = ({ isLiveMode, audioStreams, localMutedUsers }) => {
+const RemoteAudioContainer = ({ isLiveMode, audioStreams, localMutedUsers, isLocked }) => {
     if (!isLiveMode) return null;
 
     return (
@@ -53,10 +53,12 @@ const RemoteAudioContainer = ({ isLiveMode, audioStreams, localMutedUsers }) => 
                     userId={userId}
                     stream={audioStreams[userId]}
                     muted={!!localMutedUsers[userId]}
+                    isLocked={isLocked}
                 />
             ))}
         </div>
     );
 };
+
 
 export default RemoteAudioContainer;
