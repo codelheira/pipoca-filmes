@@ -1,42 +1,35 @@
+const API_BASE = "https://pipoca-backend-jazs.onrender.com/api";
+
 export async function onRequest(context) {
   const { request, next } = context;
   const url = new URL(request.url);
   const userAgent = request.headers.get('user-agent') || '';
   
+  // Detect bots that require server-side meta tags
   const isBot = /WhatsApp|facebookexternalhit|Twitterbot|Slackbot|Discordbot|TelegramBot|Googlebot|metatags.io|opengraph.xyz/i.test(userAgent);
-  const isWatch = url.pathname.includes('/watch/filme/') || url.pathname.includes('/watch/serie/');
+  const watchMatch = url.pathname.match(/\/watch\/(filme|serie)\/([^/]+)/);
 
-  if (!isBot || !isWatch) {
+  // If not a bot or not a watch page, proceed normally
+  if (!isBot || !watchMatch) {
     return await next();
   }
 
-  let debugInfo = "";
-
   try {
-    const match = url.pathname.match(/\/watch\/(filme|serie)\/([^/]+)/);
-    if (!match) return await next();
-    
-    const type = match[1];
-    const slug = match[2].split('?')[0];
-    
-    const API_BASE = "https://pipoca-backend-jazs.onrender.com/api";
+    const type = watchMatch[1];
+    const slug = watchMatch[2].split('?')[0];
     const infoUrl = `${API_BASE}/info/${type}/${slug}`;
     
-    debugInfo += `Fetching ${infoUrl}... `;
-    
+    // Fetch movie/serie metadata from API
     const apiResponse = await fetch(infoUrl, { 
-      signal: AbortSignal.timeout(6000),
+      signal: AbortSignal.timeout(5000),
       headers: { 'Accept': 'application/json' }
     });
 
-    if (!apiResponse.ok) {
-        debugInfo += `API error: ${apiResponse.status}`;
-        throw new Error(`API error: ${apiResponse.status}`);
-    }
+    if (!apiResponse.ok) return await next();
     
     const data = await apiResponse.json();
-    debugInfo += `Success! Found ${data.name}. `;
     
+    // Get the original HTML response
     const response = await next();
     
     const title = `${data.name} (${data.year}) - Pipoca Filmes`;
@@ -57,7 +50,8 @@ export async function onRequest(context) {
       <meta name="twitter:image" content="${image}">
     `;
 
-    const transformedResponse = new HTMLRewriter()
+    // Inject meta tags using HTMLRewriter for reliability
+    return new HTMLRewriter()
       .on('title', {
         element(element) {
           element.remove();
@@ -70,18 +64,9 @@ export async function onRequest(context) {
       })
       .transform(response);
 
-    // Adiciona headers de debug à resposta transformada
-    const finalResponse = new Response(transformedResponse.body, transformedResponse);
-    finalResponse.headers.set('x-social-preview', 'active');
-    finalResponse.headers.set('x-debug-info', debugInfo);
-    
-    return finalResponse;
-
   } catch (err) {
-    const response = await next();
-    const finalResponse = new Response(response.body, response);
-    finalResponse.headers.set('x-social-preview-error', err.message);
-    finalResponse.headers.set('x-debug-info', debugInfo);
-    return finalResponse;
+    // Fallback to normal rendering on any error
+    console.error('Social Preview Error:', err);
+    return await next();
   }
 }
