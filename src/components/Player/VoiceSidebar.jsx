@@ -1,5 +1,6 @@
 import React from 'react';
-import { FaUsers, FaTimes, FaVolumeMute, FaVolumeUp, FaMicrophoneSlash } from 'react-icons/fa';
+import { FaUsers, FaTimes, FaVolumeMute, FaVolumeUp, FaMicrophoneSlash, FaMicrophone } from 'react-icons/fa';
+
 
 import { P } from './player.style';
 
@@ -46,15 +47,20 @@ const VoiceSidebar = ({
                             </P.ParticipantInfo>
 
                             <div style={{ display: 'flex', gap: '5px' }}>
-                                {isHost && !isMe && !isMutedByThemselves && (
+                                {isHost && !isMe && (
                                     <P.MuteToggle 
-                                        onClick={() => onForceMute(p.id)}
-                                        title="Silenciar para todos (Force Mute)"
-                                        style={{ color: '#ef4444' }}
+                                        onClick={!isMutedByThemselves ? () => onForceMute(p.id) : undefined}
+                                        title={isMutedByThemselves ? "Usuário já silenciado" : "Silenciar para todos (Force Mute)"}
+                                        style={{ 
+                                            color: isMutedByThemselves ? '#dc2626' : '#cae962',
+                                            cursor: isMutedByThemselves ? 'default' : 'pointer',
+                                            opacity: isMutedByThemselves ? 0.8 : 1
+                                        }}
                                     >
-                                        <FaMicrophoneSlash />
+                                        {isMutedByThemselves ? <FaMicrophoneSlash /> : <FaMicrophone />}
                                     </P.MuteToggle>
                                 )}
+
                                 
                                 {!isMe && (
                                     <P.MuteToggle 
