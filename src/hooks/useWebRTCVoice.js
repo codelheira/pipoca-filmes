@@ -55,6 +55,8 @@ export const useWebRTCVoice = () => {
     const testStreamRef = useRef(null);
     const testAnalyserRef = useRef(null);
     const inputVolumeNodeRef = useRef(null);
+    const lastMuteStatusSentRef = useRef(null); // Evita loop de spam de socket
+
 
     const refreshDevices = useCallback(async () => {
         try {
@@ -189,15 +191,8 @@ export const useWebRTCVoice = () => {
             });
         }
         setIsMuted(muted);
-        
-        // Broadcast mute status to everyone
-        if (localUser) {
-            sendSyncCommand('user_mute_status', { 
-                user_id: localUser.id, 
-                is_muted: muted 
-            });
-        }
-    }, [localUser, sendSyncCommand]);
+    }, []);
+
 
 
     const toggleMute = useCallback(() => {
@@ -456,13 +451,17 @@ export const useWebRTCVoice = () => {
 
     useEffect(() => {
         if (micReady && localUser) {
-            // Garante que todos saibam o estado inicial (desmutado)
+            // Só envia se o estado realmente mudou ou for a primeira vez
+            if (lastMuteStatusSentRef.current === isMuted) return;
+            
             sendSyncCommand('user_mute_status', { 
                 user_id: localUser.id, 
                 is_muted: isMuted 
             });
+            lastMuteStatusSentRef.current = isMuted;
         }
     }, [micReady, localUser, isMuted, sendSyncCommand]);
+
 
 
     useEffect(() => {

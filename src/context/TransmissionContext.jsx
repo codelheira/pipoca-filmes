@@ -35,19 +35,25 @@ export const TransmissionProvider = ({ children }) => {
         return anonId;
     };
 
-    // Initialize localUser
-    useEffect(() => {
+    // Initialize localUser memoized to avoid identity shifts
+    const memorizedLocalUser = React.useMemo(() => {
         const id = getUserId();
         const guestNames = ['Pipoca Ligeira', 'Espectador Veloz', 'Cineasta Anônimo', 'Pipoqueiro Pro', 'Crítico Ninja'];
-        const randomName = guestNames[Math.floor(Math.random() * guestNames.length)];
+        const randomName = guestNames[id.length % guestNames.length]; // Deterministic
         
-        setLocalUser({
+        return {
             id: id,
             name: user?.name || user?.username || randomName,
             avatar: user?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${id}`,
             role: role || 'guest'
-        });
+        };
     }, [user, role]);
+
+    // Update localUser state only when memoized value changes
+    useEffect(() => {
+        setLocalUser(memorizedLocalUser);
+    }, [memorizedLocalUser]);
+
 
     // Cleanup when unmounting
     useEffect(() => {
@@ -217,11 +223,10 @@ export const TransmissionProvider = ({ children }) => {
         window.history.pushState({}, '', url);
     };
 
-    const sendSyncCommand = (command, timeOrData = null) => {
+    const sendSyncCommand = React.useCallback((command, timeOrData = null) => {
         if (!socketRef.current || !socketRef.current.connected) return;
         
         if (role === 'guest' && command !== 'guest_ready' && command !== 'user_mute_status') return;
-
         if (role !== 'host' && role !== 'guest') return;
         
         const payload = { type: command };
@@ -238,16 +243,16 @@ export const TransmissionProvider = ({ children }) => {
         } else {
             socketRef.current.emit('sync_command', payload);
         }
+    }, [role]);
 
-    };
-
-    const sendSignal = (targetId, signalData) => {
+    const sendSignal = React.useCallback((targetId, signalData) => {
         if (!socketRef.current || !socketRef.current.connected) return;
         socketRef.current.emit('signal', {
             target: targetId,
             signalData
         });
-    };
+    }, []);
+
 
 
     return (
