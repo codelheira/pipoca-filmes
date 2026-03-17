@@ -12,6 +12,8 @@ export const usePlayerSync = ({
     const [isGuestWaitingSync, setIsGuestWaitingSync] = useState(false);
     const [readyGuests, setReadyGuests] = useState(new Set());
     const [isAutoplayBlocked, setIsAutoplayBlocked] = useState(isLiveMode && role === 'guest');
+    const userHasInteractedRef = useRef(false);
+
     
     const ignoreNextSyncRef = useRef(false);
     const prevParticipantsCount = useRef(participants?.length || 0);
@@ -64,10 +66,18 @@ export const usePlayerSync = ({
                         videoRef.current.currentTime = data.time;
                     }
                     if (!isAutoplayBlocked) {
-                        videoRef.current.play().catch(() => setIsAutoplayBlocked(true));
+                        videoRef.current.play().catch((err) => {
+                            console.warn("[Sync] Play failed on guest:", err);
+                            // Se o usuário ainda não interagiu, voltamos para o estado de bloqueio.
+                            // Mas se ele já clicou em "Conectar", não mostramos o botão gigante de novo.
+                            if (!userHasInteractedRef.current) {
+                                setIsAutoplayBlocked(true);
+                            }
+                        });
                     }
                     setIsGuestWaitingSync(false);
                     break;
+
                 case 'sync_pause':
                     if (data.time !== undefined) videoRef.current.currentTime = data.time;
                     videoRef.current.pause();
@@ -119,13 +129,19 @@ export const usePlayerSync = ({
         prevParticipantsCount.current = participants.length;
     }, [participants, isLiveMode, role, waitingPause]);
 
+    const handleInteraction = useCallback(() => {
+        userHasInteractedRef.current = true;
+        setIsAutoplayBlocked(false);
+    }, []);
+
     return {
         waitingReason,
         isGuestWaitingSync,
         readyGuests,
         isAutoplayBlocked,
-        setIsAutoplayBlocked,
+        handleInteraction,
         ignoreNextSyncRef,
         waitingPause
     };
 };
+

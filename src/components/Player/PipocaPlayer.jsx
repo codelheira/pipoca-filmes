@@ -43,10 +43,11 @@ const PipocaPlayer = ({ streamData, poster, slug, mediaTitle }) => {
         isGuestWaitingSync, 
         readyGuests, 
         isAutoplayBlocked, 
-        setIsAutoplayBlocked, 
+        handleInteraction, 
         ignoreNextSyncRef,
         waitingPause 
     } = usePlayerSync({
+
         videoRef,
         role,
         isLiveMode,
@@ -413,15 +414,16 @@ const PipocaPlayer = ({ streamData, poster, slug, mediaTitle }) => {
                 isGuestWaitingSync={isGuestWaitingSync}
                 onConnect={() => {
                     videoRef.current?.play().then(() => {
-                        setIsAutoplayBlocked(false);
+                        handleInteraction();
                         setIsPlaying(true);
                         startMic().catch(e => console.error("Erro mic:", e));
                     }).catch(() => {
-                        setIsAutoplayBlocked(false);
+                        handleInteraction();
                         startMic().catch(e => console.error("Erro mic:", e));
                     });
                 }}
             />
+
 
             <P.BufferContainer visible={isBuffering && isPlaying}>
                 <P.Spinner />
