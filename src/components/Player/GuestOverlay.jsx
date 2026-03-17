@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { FaPlay, FaSync } from 'react-icons/fa';
 import { P } from './player.style';
 
@@ -9,6 +9,17 @@ const GuestOverlay = ({
     isGuestWaitingSync,
     onConnect 
 }) => {
+    const [showHint, setShowHint] = useState(true);
+
+    useEffect(() => {
+        if (!isAutoplayBlocked && !isGuestWaitingSync) {
+            const timer = setTimeout(() => setShowHint(false), 5000);
+            return () => clearTimeout(timer);
+        } else {
+            setShowHint(true);
+        }
+    }, [isAutoplayBlocked, isGuestWaitingSync]);
+
     if (!isLiveMode || role !== 'guest') return null;
 
     if (isAutoplayBlocked) {
@@ -47,6 +58,8 @@ const GuestOverlay = ({
         );
     }
 
+    if (!showHint) return null;
+
     return (
         <P.GuestOverlay>
             <P.GuestMessage>
@@ -57,3 +70,4 @@ const GuestOverlay = ({
 };
 
 export default GuestOverlay;
+
