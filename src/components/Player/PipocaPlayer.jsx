@@ -83,6 +83,7 @@ const PipocaPlayer = ({ streamData, poster, slug, mediaTitle }) => {
     const [skipAnim, setSkipAnim] = useState(null)
     const [isScrubbing, setIsScrubbing] = useState(false)
     const [scrubTime, setScrubTime] = useState(0)
+    const [hoverX, setHoverX] = useState(0)
     const [isHoveringBar, setIsHoveringBar] = useState(false)
     
     // Cast State
