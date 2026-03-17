@@ -348,7 +348,7 @@ const Watch = () => {
               src={`${movie.trailer}?autoplay=1`}
               title="YouTube video player"
               frameBorder="0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope"
               allowFullScreen
             ></iframe>
           </div>

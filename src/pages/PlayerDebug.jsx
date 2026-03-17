@@ -16,7 +16,7 @@ import {
   FaNetworkWired
 } from 'react-icons/fa'
 import {
-  MdPictureInPictureAlt, MdSpeed, MdHighQuality,
+  MdSpeed, MdHighQuality,
   MdSubtitles, MdFullscreen, MdVolumeUp
 } from 'react-icons/md'
 
@@ -80,7 +80,7 @@ const PLAYER_FEATURES = [
   { name: 'Seek (Barra de Progresso)', desc: 'Navegação temporal por clique', key: 'seek' },
   { name: 'Volume Controle', desc: 'Slider de volume com mute', key: 'volume' },
   { name: 'Fullscreen', desc: 'Toggle tela cheia nativo', key: 'fullscreen' },
-  { name: 'Picture-in-Picture', desc: 'PiP flutuante pelo navegador', key: 'pip' },
+
   { name: 'Auto-hide Controls', desc: 'Controles somem após 3s de inatividade', key: 'autoHide' },
   { name: 'Progress Save', desc: 'Salva progresso no localStorage por slug', key: 'progressSave' },
   { name: 'Progress Restore', desc: 'Restaura de onde parou ao reentrar', key: 'progressRestore' },
@@ -154,7 +154,7 @@ const PlayerDebug = () => {
       const v = document.createElement('video')
       return !!v.canPlayType('application/vnd.apple.mpegurl')
     })(),
-    pipSupported: 'pictureInPictureEnabled' in document,
+
     fullscreenSupported: document.fullscreenEnabled || false,
     mediaSourceSupported: typeof MediaSource !== 'undefined',
   }))
@@ -197,7 +197,7 @@ const PlayerDebug = () => {
     addLog('🎬 PipocaPlayer Debug Console inicializado', 'success')
     addLog(`🖥️ Navegador: ${navigator.userAgent.split(' ').slice(-2).join(' ')}`, 'info')
     addLog(`📺 HLS.js suportado: ${Hls.isSupported() ? '✅ Sim' : '❌ Não'}`, Hls.isSupported() ? 'success' : 'error')
-    addLog(`🖼️ PiP suportado: ${document.pictureInPictureEnabled ? '✅ Sim' : '❌ Não'}`, document.pictureInPictureEnabled ? 'success' : 'warn')
+
     addLog(`📐 Tela: ${window.screen.width}x${window.screen.height} @ ${window.devicePixelRatio}x`, 'info')
     addLog(`🧠 CPU Cores: ${navigator.hardwareConcurrency || '?'} | RAM: ${navigator.deviceMemory || '?'}GB`, 'info')
     addEvent('Debug Console Iniciado', 'success')
@@ -356,21 +356,7 @@ const PlayerDebug = () => {
         }
         break
 
-      case 'pip':
-        addLog('🧪 Teste: Picture-in-Picture...', 'info')
-        if (document.pictureInPictureEnabled) {
-          video.requestPictureInPicture().then(() => {
-            addLog('✅ PiP ativado com sucesso', 'success')
-            setTestedFeatures(prev => ({ ...prev, pip: true }))
-            addEvent('Teste PiP: OK', 'success')
-          }).catch(e => {
-            addLog(`❌ PiP falhou: ${e.message}`, 'error')
-            addEvent('Teste PiP: FALHOU', 'error')
-          })
-        } else {
-          addLog('❌ PiP não suportado neste navegador', 'error')
-        }
-        break
+
 
       case 'skip':
         addLog('🧪 Teste: Skip +10s...', 'info')
@@ -727,9 +713,7 @@ const PlayerDebug = () => {
               <D.QuickTestBtn onClick={() => runQuickTest('fullscreen')}>
                 <FaExpand /> Fullscreen
               </D.QuickTestBtn>
-              <D.QuickTestBtn onClick={() => runQuickTest('pip')}>
-                <MdPictureInPictureAlt /> PiP
-              </D.QuickTestBtn>
+
               <D.QuickTestBtn onClick={() => runQuickTest('skip')}>
                 <FaSync /> Skip +10s
               </D.QuickTestBtn>

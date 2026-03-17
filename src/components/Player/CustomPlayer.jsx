@@ -28,6 +28,9 @@ export default function CustomPlayer({ source, poster }) {
         src={source}
         poster={poster}
         controls
+        disablePictureInPicture
+        playsInline
+        webkit-playsinline="true"
         style={{ width: '100%', height: '100%' }}
       />
     </PlayerWrapper>

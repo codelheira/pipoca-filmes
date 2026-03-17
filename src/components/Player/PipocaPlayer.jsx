@@ -563,6 +563,11 @@ const PipocaPlayer = ({ streamData, poster, slug, mediaTitle }) => {
                 }}
                 crossOrigin="anonymous"
                 preload="auto"
+                playsInline
+                webkit-playsinline="true"
+                disablePictureInPicture
+                disablesRemotePlayback
+                controlsList="noplaybackrate"
                 onPlay={() => {
                     setIsPlaying(true);
                     setIsGuestWaitingSync(false);

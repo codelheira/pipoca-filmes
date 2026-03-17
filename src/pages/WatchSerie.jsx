@@ -307,7 +307,7 @@ const WatchSerie = () => {
                             src={`${serie.trailer}?autoplay=1`}
                             title="YouTube trailer"
                             frameBorder="0"
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope"
                             allowFullScreen
                         ></iframe>
                     </div>
