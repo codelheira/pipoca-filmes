@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { io } from 'socket.io-client';
-import { API_URL } from '../config';
+import { API_URL, SOCKET_URL } from '../config';
 
 /**
  * useCast Hook
@@ -129,8 +129,9 @@ export const useCast = (videoRef, mediaInfo) => {
 
         try {
             // Cria um socket temporário para enviar o comando de "Play" para a TV
-            const socket = io(API_URL.replace('http', 'ws'), {
-                query: { token: 'tv_link_sender_' + cleanCode, user_id: 'sender_' + Date.now() }
+            const socket = io(SOCKET_URL, {
+                query: { token: 'tv_link_sender_' + cleanCode, user_id: 'sender_' + Date.now() },
+                transports: ['websocket', 'polling']
             });
 
             socket.on('connect', () => {
