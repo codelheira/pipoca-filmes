@@ -102,7 +102,7 @@ const PipocaPlayer = ({ streamData, poster, slug, mediaTitle }) => {
     const handleShare = async (link) => {
         if (!link) return;
         
-        const shareText = `Venha assistir ${mediaTitle || 'este título'} comigo, entre na minha sala de transmissão: ${link}`;
+        const shareText = `Venha assistir ${mediaTitle || 'este título'} comigo, entre na minha sala de transmissão:`;
         
         const shareData = {
             title: mediaTitle ? `Pipoca Filmes - ${mediaTitle}` : 'Pipoca Filmes - Watch2Gether',
