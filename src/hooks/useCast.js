@@ -12,6 +12,11 @@ export const useCast = (videoRef, mediaInfo) => {
 
     // Initialize Google Cast
     useEffect(() => {
+        // If Cast SDK was already loaded before the hook mounted
+        if (window.cast?.framework) {
+            initializeCastApi();
+        }
+
         window['__onGCastApiAvailable'] = (isAvailable) => {
             if (isAvailable) {
                 initializeCastApi();
@@ -19,33 +24,42 @@ export const useCast = (videoRef, mediaInfo) => {
         };
     }, []);
 
+    const [isOptionsSet, setIsOptionsSet] = useState(false);
+
     const initializeCastApi = () => {
-        const castContext = window.cast.framework.CastContext.getInstance();
-        castContext.setOptions({
-            receiverApplicationId: window.chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID,
-            autoJoinPolicy: window.chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED
-        });
+        if (isOptionsSet) return;
+        
+        try {
+            const castContext = window.cast.framework.CastContext.getInstance();
+            castContext.setOptions({
+                receiverApplicationId: window.chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID,
+                autoJoinPolicy: window.chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED
+            });
+            setIsOptionsSet(true);
 
-        // Listen for session changes
-        castContext.addEventListener(
-            window.cast.framework.CastContextEventType.SESSION_STATE_CHANGED,
-            (event) => {
-                switch (event.sessionState) {
-                    case window.cast.framework.SessionState.SESSION_STARTED:
-                        setIsCasting(true);
-                        loadMediaOnCast();
-                        break;
-                    case window.cast.framework.SessionState.SESSION_ENDED:
-                        setIsCasting(false);
-                        setCastActiveDevice(null);
-                        break;
-                    default:
-                        break;
+            // Listen for session changes
+            castContext.addEventListener(
+                window.cast.framework.CastContextEventType.SESSION_STATE_CHANGED,
+                (event) => {
+                    switch (event.sessionState) {
+                        case window.cast.framework.SessionState.SESSION_STARTED:
+                            setIsCasting(true);
+                            loadMediaOnCast();
+                            break;
+                        case window.cast.framework.SessionState.SESSION_ENDED:
+                            setIsCasting(false);
+                            setCastActiveDevice(null);
+                            break;
+                        default:
+                            break;
+                    }
                 }
-            }
-        );
+            );
 
-        setIsCastAvailable(true);
+            setIsCastAvailable(true);
+        } catch (e) {
+            console.warn('Failed to initialize Cast API:', e);
+        }
     };
 
     const loadMediaOnCast = async () => {
@@ -84,10 +98,10 @@ export const useCast = (videoRef, mediaInfo) => {
                     window.cast.framework.CastContext.getInstance().requestSession();
                 }
             });
-        } else if (window.cast?.framework) {
+        } else if (window.cast?.framework && isOptionsSet) {
             window.cast.framework.CastContext.getInstance().requestSession();
         } else {
-            alert('Casting não disponível neste navegador.');
+            alert('Configuração de transmissão ainda carregando... tente novamente em instantes.');
         }
     };
 
