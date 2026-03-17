@@ -122,7 +122,7 @@ export const useCast = (videoRef, mediaInfo) => {
     };
 
     // TV Link Logic (Parear com código)
-    const linkWithTVCode = async (code, slug, tipo) => {
+    const linkWithTVCode = async (code, slug, type) => {
         // Normaliza o código remover o hifen se houver
         const cleanCode = code.replace('-', '').trim();
         if (cleanCode.length !== 6) return { success: false, error: 'Código inválido' };
@@ -140,7 +140,7 @@ export const useCast = (videoRef, mediaInfo) => {
                     type: 'tv_play',
                     payload: {
                         slug,
-                        tipo,
+                        tipo: type,
                         url: mediaInfo.url,
                         title: mediaInfo.title,
                         poster: mediaInfo.poster,

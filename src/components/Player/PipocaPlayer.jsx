@@ -30,7 +30,7 @@ const formatTime = (seconds) => {
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
 }
 
-const PipocaPlayer = ({ streamData, poster, slug, mediaTitle }) => {
+const PipocaPlayer = ({ streamData, poster, slug, mediaTitle, tipo }) => {
     const containerRef = useRef(null)
     const videoRef = useRef(null)
     const hlsRef = useRef(null)
@@ -427,13 +427,25 @@ const PipocaPlayer = ({ streamData, poster, slug, mediaTitle }) => {
 
     const handlePairTV = async () => {
         if (tvCode.length < 6) return alert("Código inválido de 6 dígitos.");
-        const res = await linkWithTVCode(tvCode, slug, 'movie'); // 'movie' como fallback se tipo for indefinido
+        // 'tipo' pode vir como 'movie' ou 'serie' das props
+        const res = await linkWithTVCode(tvCode, slug, tipo || 'movie'); 
         setIsCodeModalOpen(false);
     };
 
     const stopCasting = () => {
         stopCast();
     };
+
+    useEffect(() => {
+        // Se estivermos em modo receptor de TV, o player deve sumir com os controles
+        // e apenas reproduzir o que o celular mandar.
+        const urlParams = new URLSearchParams(window.location.search);
+        const isReceiver = urlParams.get('mode') === 'tv_receiver';
+        
+        if (isReceiver && videoRef.current) {
+            videoRef.current.play().catch(e => console.log("Auto-play blocked, waiting interaction"));
+        }
+    }, [streamData]);
 
     useEffect(() => {
         const handleFsChange = () => setIsFullscreen(!!(document.fullscreenElement || document.webkitFullscreenElement));

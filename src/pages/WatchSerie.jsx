@@ -280,6 +280,7 @@ const WatchSerie = () => {
                                     poster={serie?.backdrop || serie?.poster} 
                                     slug={`${slug}_s${selectedSeason}_e${selectedEpisode}`} 
                                     mediaTitle={`${serie?.name} - T${selectedSeason}E${selectedEpisode}`}
+                                    tipo="serie"
                                 />
                             ) : episodeData?.player_url ? (
                                 <iframe

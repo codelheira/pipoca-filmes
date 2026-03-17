@@ -258,6 +258,7 @@ const Watch = () => {
                 poster={movie?.backdrop || movie?.poster} 
                 slug={slug} 
                 mediaTitle={movie?.name}
+                tipo={tipo}
               />
             ) : (
               <W.PlayerPlaceholder>
