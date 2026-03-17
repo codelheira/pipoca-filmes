@@ -42,6 +42,9 @@ const PipocaPlayer = ({ streamData, poster, slug, mediaTitle }) => {
     const voiceState = useWebRTCVoice();
     const { isMuted: voiceMuted, toggleMute: toggleVoiceMute, audioStreams, speakingUsers, micReady, startMic } = voiceState;
 
+    // TV Link UI State
+    const [isCodeModalOpen, setIsCodeModalOpen] = useState(false);
+    const [tvCode, setTvCode] = useState('');
     
     // Sync Hook
     const { 
@@ -87,7 +90,7 @@ const PipocaPlayer = ({ streamData, poster, slug, mediaTitle }) => {
     const [isHoveringBar, setIsHoveringBar] = useState(false)
     
     // Client-Side Cast Hook
-    const { isCasting, castActiveDevice, triggerNativePicker, stopCast } = useCast(videoRef, {
+    const { isCasting, castActiveDevice, triggerNativePicker, stopCast, linkWithTVCode } = useCast(videoRef, {
         url: streamData?.url ? `${API_URL}/video-proxy?url=${encodeURIComponent(streamData.url)}` : '',
         title: mediaTitle || 'Reproduzindo Pipoca Filmes',
         poster: poster,
@@ -409,7 +412,23 @@ const PipocaPlayer = ({ streamData, poster, slug, mediaTitle }) => {
     };
 
     const handleCastClick = () => {
-        triggerNativePicker();
+        // Se já está transmitindo, para. Se não, abre o menu de opções.
+        if (isCasting) {
+            stopCasting();
+        } else {
+            const useNative = window.confirm("Deseja usar o Cast nativo (Chromecast)?\n\nClique em 'Cancelar' se preferir digitar um código de TV.");
+            if (useNative) {
+                triggerNativePicker();
+            } else {
+                setIsCodeModalOpen(true);
+            }
+        }
+    };
+
+    const handlePairTV = async () => {
+        if (tvCode.length < 6) return alert("Código inválido de 6 dígitos.");
+        const res = await linkWithTVCode(tvCode, slug, 'movie'); // 'movie' como fallback se tipo for indefinido
+        setIsCodeModalOpen(false);
     };
 
     const stopCasting = () => {
@@ -552,6 +571,38 @@ const PipocaPlayer = ({ streamData, poster, slug, mediaTitle }) => {
                 onForceMute={(targetId) => sendSyncCommand('force_mute', { target_id: targetId })}
                 voiceState={voiceState}
             />
+
+            {/* Modal de Código de TV */}
+            {isCodeModalOpen && (
+                <P.Overlay style={{ zIndex: 3000 }}>
+                    <P.Modal onClick={e => e.stopPropagation()} style={{ padding: '30px', maxWidth: '400px', textAlign: 'center' }}>
+                        <FaTv style={{ fontSize: '3rem', color: '#cae962', marginBottom: '20px' }} />
+                        <h2 style={{ marginBottom: '15px' }}>Parear Smart TV</h2>
+                        <p style={{ color: '#aaa', marginBottom: '25px', fontSize: '0.9rem' }}>
+                            Digite o código que aparece na tela da sua TV em <strong>pipoca.me/tv</strong>
+                        </p>
+                        
+                        <input 
+                            type="text" 
+                            placeholder="Ex: 123 456" 
+                            maxLength={7}
+                            value={tvCode}
+                            onChange={(e) => setTvCode(e.target.value)}
+                            style={{ 
+                                width: '100%', padding: '15px', borderRadius: '10px', 
+                                background: '#111', border: '2px solid #cae962', color: '#fff',
+                                fontSize: '2rem', textAlign: 'center', marginBottom: '25px',
+                                letterSpacing: '5px'
+                            }}
+                        />
+
+                        <div style={{ display: 'flex', gap: '15px' }}>
+                            <P.CloseBtn onClick={() => setIsCodeModalOpen(false)} style={{ flex: 1, backgroundColor: '#333' }}>Cancelar</P.CloseBtn>
+                            <P.ControlBtn onClick={handlePairTV} style={{ flex: 1, backgroundColor: '#cae962', color: '#000', borderRadius: '10px' }}>Conectar</P.ControlBtn>
+                        </div>
+                    </P.Modal>
+                </P.Overlay>
+            )}
 
 
 

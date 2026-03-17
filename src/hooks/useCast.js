@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
+import { io } from 'socket.io-client';
+import { API_URL } from '../config';
 
 /**
  * useCast Hook
@@ -9,6 +11,8 @@ export const useCast = (videoRef, mediaInfo) => {
     const [isCastAvailable, setIsCastAvailable] = useState(false);
     const [isCasting, setIsCasting] = useState(false);
     const [castActiveDevice, setCastActiveDevice] = useState(null);
+    const [isTVLinked, setIsTVLinked] = useState(false);
+    const [tvLinkSocket, setTvLinkSocket] = useState(null);
 
     // Initialize Google Cast
     useEffect(() => {
@@ -109,14 +113,65 @@ export const useCast = (videoRef, mediaInfo) => {
         if (window.cast?.framework) {
             window.cast.framework.CastContext.getInstance().getCurrentSession()?.endSession(true);
         }
+        if (tvLinkSocket) {
+            tvLinkSocket.close();
+            setTvLinkSocket(null);
+        }
         setIsCasting(false);
+        setIsTVLinked(false);
+    };
+
+    // TV Link Logic (Parear com código)
+    const linkWithTVCode = async (code, slug, tipo) => {
+        // Normaliza o código remover o hifen se houver
+        const cleanCode = code.replace('-', '').trim();
+        if (cleanCode.length !== 6) return { success: false, error: 'Código inválido' };
+
+        try {
+            // Cria um socket temporário para enviar o comando de "Play" para a TV
+            const socket = io(API_URL.replace('http', 'ws'), {
+                query: { token: 'tv_link_sender_' + cleanCode, user_id: 'sender_' + Date.now() }
+            });
+
+            socket.on('connect', () => {
+                // Envia o payload de mídia para a TV receptor que está ouvindo no mesmo "canal"
+                socket.emit('sync_command', {
+                    type: 'tv_play',
+                    payload: {
+                        slug,
+                        tipo,
+                        url: mediaInfo.url,
+                        title: mediaInfo.title,
+                        poster: mediaInfo.poster,
+                        time: videoRef.current?.currentTime || 0
+                    },
+                    room: 'tv_link_' + cleanCode 
+                });
+
+                setIsCasting(true);
+                setCastActiveDevice('Smart TV Link');
+                setIsTVLinked(true);
+                setTvLinkSocket(socket);
+
+                // Pausa local
+                if (videoRef.current) videoRef.current.pause();
+                
+                return { success: true };
+            });
+
+        } catch (e) {
+            console.error('TV Link Error:', e);
+            return { success: false, error: 'Falha ao conectar' };
+        }
     };
 
     return {
         isCastAvailable,
         isCasting,
+        isTVLinked,
         castActiveDevice,
         triggerNativePicker,
-        stopCast
+        stopCast,
+        linkWithTVCode
     };
 };

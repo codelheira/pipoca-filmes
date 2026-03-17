@@ -16,6 +16,7 @@ const WatchSerie = lazy(() => import("./pages/WatchSerie"))
 const Search = lazy(() => import("./pages/Search"))
 const Categoria = lazy(() => import("./pages/Categoria"))
 const PlayerDebug = lazy(() => import("./pages/PlayerDebug"))
+const TVMode = lazy(() => import("./pages/TVMode"))
 import ScrollToTop from "./components/ScrollToTop"
 
 const App = () => {
@@ -109,6 +110,14 @@ const App = () => {
           element={
             <Suspense fallback={<Skeleton />}>
               <PlayerDebug />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/tv"
+          element={
+            <Suspense fallback={<Skeleton />}>
+              <TVMode />
             </Suspense>
           }
         />
