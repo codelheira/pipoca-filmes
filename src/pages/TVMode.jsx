@@ -12,27 +12,31 @@ const TVMode = () => {
     const navigate = useNavigate();
 
     useEffect(() => {
-        // Gerar um código aleatório de 6 dígitos
+        // Gerar um código aleatório de 6 dígitos IMEDIATAMENTE para não travar a UI
         const code = Math.floor(100000 + Math.random() * 900000).toString();
         const formattedCode = code.slice(0, 3) + '-' + code.slice(3);
         setPairingCode(formattedCode);
+        setStatus('ready'); // Mostra a interface imediatamente com o código
 
-        // Conectar ao WebSocket para aguardar o comando do celular
-        const newSocket = io(API_URL.replace('http', 'ws'), {
-            query: { token: 'tv_link_' + code, user_id: 'tv_receiver_' + code }
+        // Conectar ao WebSocket usando o SOCKET_URL da config (removendo /api)
+        // SOCKET_URL já está mapeado para o domínio base, que é onde o Socket.io ouve.
+        const socketServer = API_URL.replace('/api', '');
+        const newSocket = io(socketServer, {
+            query: { token: 'tv_link_' + code, user_id: 'tv_receiver_' + code },
+            transports: ['websocket', 'polling']
         });
 
         newSocket.on('connect', () => {
             console.log('TV Socket Connected');
-            setStatus('ready');
         });
 
         // Ouvir comando de reprodução
         newSocket.on('sync_command', (data) => {
+            console.log("Comando recebido na TV:", data);
             if (data.type === 'tv_play') {
                  // Recebeu o comando! Redireciona para o player da TV
                  const { slug, tipo, time } = data.payload;
-                 navigate(`/watch/${tipo}/${slug}?t=${time}&mode=tv_receiver&room=${code}`);
+                 navigate(`/watch/${tipo}/${slug}?t=${time}&mode=tv_receiver&room=tv_link_${code}`);
             }
         });
 
