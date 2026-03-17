@@ -99,23 +99,27 @@ export const useWebRTCVoice = () => {
         setSpeakingUsers({});
     }, []);
 
-    const toggleMute = useCallback(() => {
-        const newState = !isMuted;
+    const applyMuteState = useCallback((muted) => {
         if (localStreamRef.current) {
             localStreamRef.current.getAudioTracks().forEach(track => {
-                track.enabled = !newState;
+                track.enabled = !muted;
             });
         }
-        setIsMuted(newState);
+        setIsMuted(muted);
         
         // Broadcast mute status to everyone
         if (localUser) {
             sendSyncCommand('user_mute_status', { 
                 user_id: localUser.id, 
-                is_muted: newState 
+                is_muted: muted 
             });
         }
-    }, [isMuted, localUser, sendSyncCommand]);
+    }, [localUser, sendSyncCommand]);
+
+    const toggleMute = useCallback(() => {
+        applyMuteState(!isMuted);
+    }, [isMuted, applyMuteState]);
+
 
 
     const setupVAD = (userId, stream, isLocal) => {
@@ -238,11 +242,11 @@ export const useWebRTCVoice = () => {
         
         // Handle sync commands targeting voice
         if (data.type === 'force_mute' && data.target_id === localUser?.id) {
-            if (!isMuted) {
-                toggleMute();
-            }
+            // Garantimos que o comando force_mute SEMPRE muta, nunca desmuta.
+            applyMuteState(true);
             return;
         }
+
 
         if (data.type !== 'signal') return;
 
@@ -304,7 +308,8 @@ export const useWebRTCVoice = () => {
             console.error(`[WebRTC] Signal erro de ${from}:`, e); 
         }
 
-    }, [createPeer, flushPendingCandidates, localUser?.id, isMuted, toggleMute]);
+    }, [createPeer, flushPendingCandidates, localUser?.id, applyMuteState]);
+
 
 
 
