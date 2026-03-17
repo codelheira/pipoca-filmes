@@ -17,7 +17,7 @@ import VoiceSidebar from './VoiceSidebar'
 import GuestOverlay from './GuestOverlay'
 import HostSyncStatus from './HostSyncStatus'
 import RemoteAudioContainer from './RemoteAudioContainer'
-import CastModal from './CastModal'
+import { useCast } from '../../hooks/useCast'
 import axios from 'axios'
 import { API_URL } from '../../config'
 
@@ -86,12 +86,13 @@ const PipocaPlayer = ({ streamData, poster, slug, mediaTitle }) => {
     const [hoverX, setHoverX] = useState(0)
     const [isHoveringBar, setIsHoveringBar] = useState(false)
     
-    // Cast State
-    const [isCastModalOpen, setIsCastModalOpen] = useState(false)
-    const [devices, setDevices] = useState([])
-    const [isLoadingDevices, setIsLoadingDevices] = useState(false)
-    const [isCasting, setIsCasting] = useState(false)
-    const [activeDevice, setActiveDevice] = useState(null)
+    // Client-Side Cast Hook
+    const { isCasting, castActiveDevice, triggerNativePicker, stopCast } = useCast(videoRef, {
+        url: `${API_URL}/video-proxy?url=${encodeURIComponent(streamData?.url)}`,
+        title: movieData?.title || 'Reproduzindo Pipoca Filmes',
+        poster: movieData?.poster,
+        type: streamData?.type || 'video/mp4'
+    });
 
     const clickTimeout = useRef(null)
     const progressBarRef = useRef(null)
@@ -408,55 +409,11 @@ const PipocaPlayer = ({ streamData, poster, slug, mediaTitle }) => {
     };
 
     const handleCastClick = () => {
-        setIsCastModalOpen(true);
-        refreshDevices();
-    };
-
-    const refreshDevices = async () => {
-        setIsLoadingDevices(true);
-        try {
-            const { data } = await axios.get(`${API_URL}/dlna/devices`);
-            setDevices(data);
-        } catch (err) {
-            console.error("Erro ao buscar dispositivos:", err);
-        } finally {
-            setIsLoadingDevices(false);
-        }
-    };
-
-    const selectDevice = async (device) => {
-        setIsLoadingDevices(true);
-        try {
-            // Se for casting, enviamos a URL do stream para o backend fazer o cast DLNA
-            // Usamos o video-proxy do backend para garantir compatibilidade com a TV (Range Requests)
-            const streamUrl = streamData.url;
-            const proxiedUrl = `${API_URL}/video-proxy?url=${encodeURIComponent(streamUrl)}`;
-            
-            const { data } = await axios.get(`${API_URL}/dlna/cast`, {
-                params: {
-                    device_ip: device.ip,
-                    video_url: proxiedUrl
-                }
-            });
-
-            if (data.success) {
-                setActiveDevice(device);
-                setIsCasting(true);
-                setIsCastModalOpen(false);
-                // Opcional: Pausar o player local se estiver transmitindo
-                videoRef.current.pause();
-            }
-        } catch (err) {
-            console.error("Erro ao realizar cast:", err);
-            alert("Não foi possível conectar à TV. Verifique se ela está ligada e na mesma rede.");
-        } finally {
-            setIsLoadingDevices(false);
-        }
+        triggerNativePicker();
     };
 
     const stopCasting = () => {
-        setIsCasting(false);
-        setActiveDevice(null);
+        stopCast();
     };
 
     useEffect(() => {
@@ -548,7 +505,7 @@ const PipocaPlayer = ({ streamData, poster, slug, mediaTitle }) => {
                     <FaTv style={{ fontSize: '3rem', color: '#cae962', marginBottom: '15px' }} />
                     <P.BufferText style={{ fontSize: '1.2rem', textAlign: 'center', backgroundColor: 'rgba(0,0,0,0.8)', padding: '20px', borderRadius: '15px', border: '1px solid #cae962' }}>
                         Reproduzindo em <br/>
-                        <span style={{ color: '#fff', fontSize: '1.4rem' }}>{activeDevice?.name}</span>
+                        <span style={{ color: '#fff', fontSize: '1.4rem' }}>{castActiveDevice || 'Smart TV'}</span>
                         <button 
                             onClick={stopCasting}
                             style={{ 
@@ -594,15 +551,6 @@ const PipocaPlayer = ({ streamData, poster, slug, mediaTitle }) => {
                 role={role}
                 onForceMute={(targetId) => sendSyncCommand('force_mute', { target_id: targetId })}
                 voiceState={voiceState}
-            />
-
-            <CastModal 
-                isOpen={isCastModalOpen} 
-                onClose={() => setIsCastModalOpen(false)}
-                devices={devices}
-                isLoading={isLoadingDevices}
-                onRefresh={refreshDevices}
-                onSelect={selectDevice}
             />
 
 
@@ -661,7 +609,7 @@ const PipocaPlayer = ({ streamData, poster, slug, mediaTitle }) => {
                         <P.ControlBtn 
                             onClick={handleCastClick} 
                             active={isCasting}
-                            title={isCasting ? `Transmitindo para ${activeDevice?.name}` : "Transmitir para TV"}
+                            title={isCasting ? `Transmitindo para ${castActiveDevice}` : "Transmitir para TV"}
                             style={isCasting ? { color: '#cae962', backgroundColor: 'rgba(202, 233, 98, 0.1)' } : {}}
                         >
                             <FaTv />
