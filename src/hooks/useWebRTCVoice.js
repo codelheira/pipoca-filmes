@@ -28,6 +28,8 @@ export const useWebRTCVoice = () => {
 
     const localStreamRef = useRef(null);
     const peersRef = useRef({}); 
+    const makingOfferRef = useRef({}); // { targetId: boolean }
+    const ignoreOfferRef = useRef({}); // { targetId: boolean }
     const audioContextRef = useRef(null);
     const analysersRef = useRef({});
     const sendSignalRef = useRef(sendSignal);
@@ -61,13 +63,17 @@ export const useWebRTCVoice = () => {
             console.log('[WebRTC] Microfone OK.');
             setMicReady(true);
 
-            // Tenta adicionar a track aos peers que já foram criados mas estão sem áudio
-            Object.values(peersRef.current).forEach(peer => {
+            // Adiciona tracks aos peers existentes
+            for (const targetId in peersRef.current) {
+                const peer = peersRef.current[targetId];
                 const senders = peer.getSenders();
+                
+                // Se já temos stream, garante que as tracks estão lá
                 if (!senders.find(s => s.track)) {
+                    console.log(`[WebRTC] Adicionando track tardia para ${targetId}`);
                     stream.getTracks().forEach(track => peer.addTrack(track, stream));
                 }
-            });
+            }
 
             return true;
         } catch (e) {
@@ -83,6 +89,8 @@ export const useWebRTCVoice = () => {
         }
         Object.values(peersRef.current).forEach(peer => peer.close());
         peersRef.current = {};
+        makingOfferRef.current = {};
+        ignoreOfferRef.current = {};
         pendingCandidatesRef.current = {};
         setAudioStreams({});
         setMicReady(false);
@@ -106,7 +114,6 @@ export const useWebRTCVoice = () => {
             }
             const ctx = audioContextRef.current;
             
-            // Retoma se estiver suspenso (comum em navegadores que aguardam interação)
             if (ctx.state === 'suspended') {
                 const resume = () => { ctx.resume().catch(e => {}); };
                 window.addEventListener('click', resume, { once: true });
@@ -127,7 +134,6 @@ export const useWebRTCVoice = () => {
                 for (let i = 0; i < dataArray.length; i++) sum += dataArray[i];
                 const average = sum / dataArray.length;
                 
-                // Limite reduzido para 10 para ser mais sensível
                 const isSpeaking = average > 10;
                 
                 setSpeakingUsers(prev => {
@@ -156,16 +162,15 @@ export const useWebRTCVoice = () => {
         pendingCandidatesRef.current[peerId] = [];
     }, []);
 
-    const createPeer = useCallback((targetId, forceInitiator = false) => {
+    const createPeer = useCallback((targetId) => {
         if (peersRef.current[targetId]) return peersRef.current[targetId];
 
-        const myId = localUser?.id;
-        const isInitiator = forceInitiator || (myId && myId < targetId);
-
-        console.log(`[WebRTC] Criando Peer ${targetId} | Initiator: ${isInitiator}`);
+        console.log(`[WebRTC] Criando Peer ${targetId}`);
         const peer = new RTCPeerConnection(ICE_SERVERS);
         peersRef.current[targetId] = peer;
         pendingCandidatesRef.current[targetId] = [];
+        makingOfferRef.current[targetId] = false;
+        ignoreOfferRef.current[targetId] = false;
 
         peer.onicecandidate = (event) => {
             if (event.candidate) {
@@ -175,16 +180,21 @@ export const useWebRTCVoice = () => {
 
         peer.onnegotiationneeded = async () => {
             try {
-                // Renegociação: permitida para qualquer lado se o estado estiver estável.
-                // Mas geralmente o initiator prefere começar.
                 console.log(`[WebRTC] Negotiation needed para ${targetId}`);
-                const offer = await peer.createOffer();
-                if (peer.signalingState !== "stable") return;
-                
-                await peer.setLocalDescription(offer);
+                makingOfferRef.current[targetId] = true;
+                await peer.setLocalDescription();
                 sendSignalRef.current(targetId, peer.localDescription);
             } catch (e) { 
                 console.error(`[WebRTC] Negotiation error para ${targetId}:`, e); 
+            } finally {
+                makingOfferRef.current[targetId] = false;
+            }
+        };
+
+        peer.oniceconnectionstatechange = () => {
+            if (peer.iceConnectionState === "failed") {
+                console.warn(`[WebRTC] ICE failed para ${targetId}. Reiniciando...`);
+                peer.restartIce();
             }
         };
 
@@ -196,14 +206,14 @@ export const useWebRTCVoice = () => {
         };
 
         if (localStreamRef.current) {
-            console.log(`[WebRTC] Adicionando tracks locais para o peer ${targetId}`);
+            console.log(`[WebRTC] Adicionando tracks locais iniciais para o peer ${targetId}`);
             localStreamRef.current.getTracks().forEach(track => {
                 peer.addTrack(track, localStreamRef.current);
             });
         }
 
         return peer;
-    }, [localUser?.id]);
+    }, []);
 
     const handleSignal = useCallback(async (event) => {
         const data = event.detail;
@@ -213,41 +223,46 @@ export const useWebRTCVoice = () => {
         const myId = localUser?.id;
         if (!myId) return;
 
-        // Polite Peer: quem tem o ID maior cede em caso de colisão
+        // Polite Peer: ID maior cede
         const isPolite = myId > from;
 
-        if (!peersRef.current[from] && (signalData.type === 'offer')) {
-            createPeer(from, false);
-        }
-
-        const peer = peersRef.current[from];
-        if (!peer) return;
-
         try {
+            let peer = peersRef.current[from];
+            
             if (signalData.type === 'offer') {
-                const offerCollision = peer.signalingState !== "stable" || peer.remoteDescription !== null;
-                
-                if (offerCollision && !isPolite) {
+                const offerCollision = makingOfferRef.current[from] || peer?.signalingState !== "stable";
+                ignoreOfferRef.current[from] = !isPolite && offerCollision;
+
+                if (ignoreOfferRef.current[from]) {
                     console.log(`[WebRTC] Colisão detectada para ${from}. Ignorando oferta (impolite).`);
                     return;
                 }
 
-                if (offerCollision && isPolite) {
-                    console.log(`[WebRTC] Colisão detectada para ${from}. Fazendo rollback (polite).`);
-                    await peer.setLocalDescription({ type: 'rollback' });
+                if (!peer) {
+                    peer = createPeer(from);
                 }
 
                 await peer.setRemoteDescription(new RTCSessionDescription(signalData));
                 await flushPendingCandidates(from);
                 
-                const answer = await peer.createAnswer();
-                await peer.setLocalDescription(answer);
-                sendSignalRef.current(from, answer);
+                if (signalData.type === "offer") {
+                    await peer.setLocalDescription();
+                    sendSignalRef.current(from, peer.localDescription);
+                }
                 
             } else if (signalData.type === 'answer') {
-                await peer.setRemoteDescription(new RTCSessionDescription(signalData));
-                await flushPendingCandidates(from);
+                if (peer) {
+                    await peer.setRemoteDescription(new RTCSessionDescription(signalData));
+                    await flushPendingCandidates(from);
+                }
             } else if (signalData.type === 'candidate') {
+                if (!peer) {
+                    // Se receber candidate antes da offer/peer existir, guarda
+                    if (!pendingCandidatesRef.current[from]) pendingCandidatesRef.current[from] = [];
+                    pendingCandidatesRef.current[from].push(signalData.candidate);
+                    return;
+                }
+
                 try {
                     if (peer.remoteDescription) {
                         await peer.addIceCandidate(new RTCIceCandidate(signalData.candidate));
@@ -255,13 +270,16 @@ export const useWebRTCVoice = () => {
                         pendingCandidatesRef.current[from].push(signalData.candidate);
                     }
                 } catch (e) {
-                    if (!isPolite) console.warn("[WebRTC] Erro ao adicionar ICE candidate (esperado no modo impolite/collision).");
+                    if (!ignoreOfferRef.current[from]) {
+                        console.warn(`[WebRTC] Erro ao adicionar ICE candidate de ${from}:`, e);
+                    }
                 }
             }
         } catch (e) { 
             console.error(`[WebRTC] Signal erro de ${from}:`, e); 
         }
     }, [createPeer, flushPendingCandidates, localUser?.id]);
+
 
     useEffect(() => {
         window.addEventListener('transmission_msg', handleSignal);
