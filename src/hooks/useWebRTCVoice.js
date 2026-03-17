@@ -42,7 +42,9 @@ export const useWebRTCVoice = () => {
     const analysersRef = useRef({});
     const gainNodeRef = useRef(null);
     const destinationNodeRef = useRef(null);
+    const processedStreamRef = useRef(null); // Ref para o stream com gain aplicado
     const sendSignalRef = useRef(sendSignal);
+
 
     const pendingCandidatesRef = useRef({}); 
     const inputVolumeNodeRef = useRef(null);
@@ -114,31 +116,37 @@ export const useWebRTCVoice = () => {
             
             // O stream "real" que enviamos pros peers agora é o processado
             const processedStream = dest.stream;
+            processedStreamRef.current = processedStream;
             processedStream.getAudioTracks().forEach(track => { track.enabled = !isMuted; });
 
             console.log('[WebRTC] Microfone (Processado) OK.');
             setMicReady(true);
 
-
-            // Adiciona tracks aos peers existentes
-            for (const targetId in peersRef.current) {
-                const peer = peersRef.current[targetId];
+            // Importante: Atualiza os tracks nos peers existentes
+            Object.values(peersRef.current).forEach(peer => {
                 const senders = peer.getSenders();
-                
-                // Se já temos stream, garante que as tracks estão lá
-                if (!senders.find(s => s.track)) {
-                    console.log(`[WebRTC] Adicionando track tardia para ${targetId}`);
-                    processedStream.getTracks().forEach(track => peer.addTrack(track, processedStream));
-                }
-            }
+                processedStream.getTracks().forEach(newTrack => {
+                    const sender = senders.find(s => s.track && s.track.kind === newTrack.kind);
+                    if (sender) {
+                        console.log(`[WebRTC] Substituindo track para peer`);
+                        sender.replaceTrack(newTrack).catch(err => {
+                            console.error("[WebRTC] Erro ao substituir track:", err);
+                        });
+                    } else {
+                        console.log(`[WebRTC] Adicionando nova track para peer`);
+                        peer.addTrack(newTrack, processedStream);
+                    }
+                });
+            });
 
             return true;
+
 
         } catch (e) {
             console.error('[WebRTC] Erro mic:', e);
             return false;
         }
-    }, [localUser]); // Removido isMuted para evitar recriação constante
+    }, [localUser, selectedInput, inputVolume, isMuted]); 
 
 
     const stopMic = useCallback(() => {
@@ -146,7 +154,9 @@ export const useWebRTCVoice = () => {
             localStreamRef.current.getTracks().forEach(t => t.stop());
             localStreamRef.current = null;
         }
+        processedStreamRef.current = null;
         Object.values(peersRef.current).forEach(peer => peer.close());
+
         peersRef.current = {};
         makingOfferRef.current = {};
         ignoreOfferRef.current = {};
@@ -162,6 +172,11 @@ export const useWebRTCVoice = () => {
                 track.enabled = !muted;
             });
         }
+        if (processedStreamRef.current) {
+            processedStreamRef.current.getAudioTracks().forEach(track => {
+                track.enabled = !muted;
+            });
+        }
         setIsMuted(muted);
         
         // Broadcast mute status to everyone
@@ -172,6 +187,7 @@ export const useWebRTCVoice = () => {
             });
         }
     }, [localUser, sendSyncCommand]);
+
 
     const toggleMute = useCallback(() => {
         applyMuteState(!isMuted);
@@ -202,9 +218,12 @@ export const useWebRTCVoice = () => {
 
 
             const checkActivity = () => {
-                if (!analysersRef.current[userId]) return;
+                const currentAnalyser = analysersRef.current[userId];
+                if (!currentAnalyser || currentAnalyser !== analyser) return; 
+                
                 const dataArray = new Uint8Array(analyser.frequencyBinCount);
                 analyser.getByteFrequencyData(dataArray);
+
                 let sum = 0;
                 for (let i = 0; i < dataArray.length; i++) sum += dataArray[i];
                 const average = sum / dataArray.length;
@@ -291,12 +310,14 @@ export const useWebRTCVoice = () => {
             setupVAD(targetId, stream, false);
         };
 
-        if (localStreamRef.current) {
+        const streamToSend = processedStreamRef.current || localStreamRef.current;
+        if (streamToSend) {
             console.log(`[WebRTC] Adicionando tracks locais iniciais para o peer ${targetId}`);
-            localStreamRef.current.getTracks().forEach(track => {
-                peer.addTrack(track, localStreamRef.current);
+            streamToSend.getTracks().forEach(track => {
+                peer.addTrack(track, streamToSend);
             });
         }
+
 
         return peer;
     }, []);
