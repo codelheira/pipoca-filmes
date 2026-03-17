@@ -38,52 +38,50 @@ export async function onRequest(context) {
     debugInfo += `Success! Found ${data.name}. `;
     
     const response = await next();
-    let html = await response.text();
-
+    
     const title = `${data.name} (${data.year}) - Pipoca Filmes`;
     const description = data.synopsis ? data.synopsis.substring(0, 160) + '...' : 'Assista os melhores filmes e séries no Pipoca Filmes.';
     const image = data.poster || data.backdrop;
 
     const metaTags = `
-  <!-- Social Preview Injected -->
-  <title>${title}</title>
-  <meta name="description" content="${description}">
-  <meta property="og:title" content="${title}">
-  <meta property="og:description" content="${description}">
-  <meta property="og:image" content="${image}">
-  <meta property="og:type" content="${type === 'filme' ? 'video.movie' : 'video.tv_show'}">
-  <meta property="og:url" content="${url.href}">
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="${title}">
-  <meta name="twitter:description" content="${description}">
-  <meta name="twitter:image" content="${image}">
-`;
+      <title>${title}</title>
+      <meta name="description" content="${description}">
+      <meta property="og:title" content="${title}">
+      <meta property="og:description" content="${description}">
+      <meta property="og:image" content="${image}">
+      <meta property="og:type" content="${type === 'filme' ? 'video.movie' : 'video.tv_show'}">
+      <meta property="og:url" content="${url.href}">
+      <meta name="twitter:card" content="summary_large_image">
+      <meta name="twitter:title" content="${title}">
+      <meta name="twitter:description" content="${description}">
+      <meta name="twitter:image" content="${image}">
+    `;
 
-    // Remove tags existentes para não duplicar
-    html = html.replace(/<title>.*?<\/title>/gi, '');
-    html = html.replace(/<meta property="og:title".*?>/gi, '');
-    html = html.replace(/<meta property="og:image".*?>/gi, '');
-    html = html.replace(/<meta property="og:description".*?>/gi, '');
+    const transformedResponse = new HTMLRewriter()
+      .on('title', {
+        element(element) {
+          element.remove();
+        }
+      })
+      .on('head', {
+        element(element) {
+          element.append(metaTags, { html: true });
+        }
+      })
+      .transform(response);
+
+    // Adiciona headers de debug à resposta transformada
+    const finalResponse = new Response(transformedResponse.body, transformedResponse);
+    finalResponse.headers.set('x-social-preview', 'active');
+    finalResponse.headers.set('x-debug-info', debugInfo);
     
-    // Injeta as novas
-    html = html.replace('</head>', `${metaTags}</head>`);
-
-    return new Response(html, {
-      headers: {
-        ...response.headers, // Mantém headers originais
-        'content-type': 'text/html;charset=UTF-8',
-        'x-social-preview': 'active',
-        'x-debug-info': debugInfo
-      },
-    });
+    return finalResponse;
 
   } catch (err) {
-    return new Response(await (await next()).text(), {
-        headers: {
-            'x-social-preview-error': err.message,
-            'x-debug-info': debugInfo,
-            'content-type': 'text/html;charset=UTF-8'
-        }
-    });
+    const response = await next();
+    const finalResponse = new Response(response.body, response);
+    finalResponse.headers.set('x-social-preview-error', err.message);
+    finalResponse.headers.set('x-debug-info', debugInfo);
+    return finalResponse;
   }
 }
