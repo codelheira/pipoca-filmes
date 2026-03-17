@@ -22,12 +22,16 @@ export const useWebRTCVoice = () => {
     const { isLiveMode, participants, localUser, role, sendSignal, sendSyncCommand } = useTransmission();
 
 
+    const [isMuted, setIsMuted] = useState(false);
+    const [audioStreams, setAudioStreams] = useState({}); 
+    const [speakingUsers, setSpeakingUsers] = useState({}); 
     const [micReady, setMicReady] = useState(false);
     const [devices, setDevices] = useState({ inputs: [], outputs: [] });
     const [selectedInput, setSelectedInput] = useState('default');
     const [selectedOutput, setSelectedOutput] = useState('default');
     const [inputLevel, setInputLevel] = useState(0);
     const [inputVolume, setInputVolume] = useState(1); // 0 to 1
+
 
 
     const localStreamRef = useRef(null);
