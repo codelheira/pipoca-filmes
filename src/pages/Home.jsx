@@ -1,5 +1,6 @@
 import React from 'react';
 import Discussion from '../components/Discussion/Discussion';
+import { Helmet } from 'react-helmet-async';
 import Featured from '../components/Featured/Featured';
 import Footer from '../components/Footer/Footer';
 import Hero from '../components/Hero/Hero';
@@ -23,6 +24,13 @@ const Home = () => {
 
   return (
     <>
+      <Helmet>
+        <title>Pipoca Filmes - Assista Filmes e Séries Online</title>
+        <meta name="description" content="O melhor site para assistir filmes e séries online em alta definição. Watch2Gether, WebRTC Voice e muito mais." />
+        <meta property="og:title" content="Pipoca Filmes - Assista Filmes e Séries Online" />
+        <meta property="og:description" content="O melhor site para assistir filmes e séries online em alta definição." />
+        <meta property="og:image" content="/logo.png" />
+      </Helmet>
       <NavBar />
       <Hero slides={homeData?.featured} />
 

@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { GoogleOAuthProvider } from '@react-oauth/google'
 import { AuthProvider } from './context/AuthContext'
 import { TransmissionProvider } from './context/TransmissionContext'
+import { HelmetProvider } from 'react-helmet-async'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -25,7 +26,9 @@ ReactDOM.createRoot(document.getElementById('root')).render(
       <AuthProvider>
         <TransmissionProvider>
           <QueryClientProvider client={queryClient}>
-            <App />
+            <HelmetProvider>
+              <App />
+            </HelmetProvider>
           </QueryClientProvider>
         </TransmissionProvider>
       </AuthProvider>

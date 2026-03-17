@@ -95,34 +95,63 @@ const PipocaPlayer = ({ streamData, poster, slug, mediaTitle }) => {
         const generatedLink = await createTransmission(mediaTitle || slug);
         if (generatedLink) {
             setRoomLink(generatedLink);
-            copyToClipboard(generatedLink);
+            handleShare(generatedLink);
         }
     };
 
-    const copyToClipboard = (text) => {
-        if (!text) return;
-        const performCopy = async () => {
-            try {
-                if (navigator.clipboard) {
-                    await navigator.clipboard.writeText(text);
-                } else {
-                    throw new Error('Clipboard API unavailable');
-                }
-            } catch (err) {
-                const textArea = document.createElement("textarea");
-                textArea.value = text;
-                textArea.style.position = "fixed";
-                textArea.style.left = "-9999px";
-                document.body.appendChild(textArea);
-                textArea.focus();
-                textArea.select();
-                try { document.execCommand('copy'); } catch (copyErr) { }
-                document.body.removeChild(textArea);
-            }
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
+    const handleShare = async (link) => {
+        if (!link) return;
+        
+        const shareText = `Venha assistir ${mediaTitle || 'este título'} comigo, entre na minha sala de transmissão: ${link}`;
+        
+        const shareData = {
+            title: mediaTitle ? `Pipoca Filmes - ${mediaTitle}` : 'Pipoca Filmes - Watch2Gether',
+            text: shareText,
+            url: link
         };
-        performCopy();
+
+        try {
+            if (navigator.share) {
+                await navigator.share(shareData);
+            } else {
+                await copyToClipboard(link);
+            }
+        } catch (err) {
+            console.error('Erro ao compartilhar:', err);
+            // Se o erro não for cancelamento do usuário, tenta copiar
+            if (err.name !== 'AbortError') {
+                await copyToClipboard(link);
+            }
+        }
+    };
+
+    const copyToClipboard = async (text) => {
+        if (!text) return;
+        try {
+            if (navigator.clipboard) {
+                await navigator.clipboard.writeText(text);
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000);
+            } else {
+                throw new Error('Clipboard API unavailable');
+            }
+        } catch (err) {
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.position = "fixed";
+            textArea.style.left = "-9999px";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            try { 
+                document.execCommand('copy'); 
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000);
+            } catch (copyErr) { 
+                console.error("Falha ao copiar:", copyErr);
+            }
+            document.body.removeChild(textArea);
+        }
     };
 
     // Auto-hide controls effect
@@ -524,7 +553,7 @@ const PipocaPlayer = ({ streamData, poster, slug, mediaTitle }) => {
                                 </P.ControlBtn>
                                 <P.ControlBtn onClick={() => setSidebarOpen(true)} active={sidebarOpen}><FaUsers /></P.ControlBtn>
                                 {role === 'host' && (
-                                    <P.ControlBtn onClick={() => copyToClipboard(roomLink || window.location.href)}>
+                                    <P.ControlBtn onClick={() => handleShare(roomLink || window.location.href)} title="Compartilhar Sala">
                                         {copied ? <FaCopy style={{ color: '#cae962' }} /> : <FaShareAlt />}
                                     </P.ControlBtn>
                                 )}

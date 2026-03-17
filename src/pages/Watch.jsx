@@ -15,6 +15,7 @@ import { createPortal } from 'react-dom'
 import Discussion from '../components/Discussion/Discussion'
 import PipocaPlayer from '../components/Player/PipocaPlayer'
 import { useTransmission } from '../context/TransmissionContext'
+import { Helmet } from 'react-helmet-async'
 
 // Feature de DLNA Discovery & Cast implementada via Backend Python
 
@@ -101,9 +102,26 @@ const Watch = () => {
     </div>
   )
 
-  return (
-    <W.Container>
-      <NavBar />
+    const pageTitle = movie ? `${movie.name} (${movie.year}) - Pipoca Filmes` : 'Pipoca Filmes';
+    const pageDesc = movie?.synopsis ? movie.synopsis.substring(0, 160) + '...' : 'Assista os melhores filmes e séries no Pipoca Filmes.';
+    const pageImage = movie?.poster || movie?.backdrop;
+
+    return (
+        <W.Container>
+            <Helmet>
+                <title>{pageTitle}</title>
+                <meta name="description" content={pageDesc} />
+                <meta property="og:title" content={pageTitle} />
+                <meta property="og:description" content={pageDesc} />
+                <meta property="og:image" content={pageImage} />
+                <meta property="og:type" content="video.movie" />
+                <meta property="og:url" content={window.location.href} />
+                <meta name="twitter:card" content="summary_large_image" />
+                <meta name="twitter:title" content={pageTitle} />
+                <meta name="twitter:description" content={pageDesc} />
+                <meta name="twitter:image" content={pageImage} />
+            </Helmet>
+            <NavBar />
 
       <W.Backdrop src={movie?.backdrop || movie?.poster} />
 

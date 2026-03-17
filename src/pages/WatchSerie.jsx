@@ -13,6 +13,7 @@ import { createPortal } from 'react-dom'
 import { W } from './watch.style' 
 import PipocaPlayer from '../components/Player/PipocaPlayer'
 import { useTransmission } from '../context/TransmissionContext'
+import { Helmet } from 'react-helmet-async'
 
 // Reusando PipocaPlayer de Watch.jsx seria o ideal. 
 // Mas para evitar problemas de importação circular ou dependência, vou definir os componentes base aqui.
@@ -124,8 +125,25 @@ const WatchSerie = () => {
         </div>
     )
 
+    const pageTitle = serie ? `${serie.name} (${serie.year}) - Pipoca Filmes` : 'Pipoca Filmes';
+    const pageDesc = serie?.synopsis ? serie.synopsis.substring(0, 160) + '...' : 'Assista os melhores filmes e séries no Pipoca Filmes.';
+    const pageImage = serie?.poster || serie?.backdrop;
+
     return (
         <S.Container>
+            <Helmet>
+                <title>{pageTitle}</title>
+                <meta name="description" content={pageDesc} />
+                <meta property="og:title" content={pageTitle} />
+                <meta property="og:description" content={pageDesc} />
+                <meta property="og:image" content={pageImage} />
+                <meta property="og:type" content="video.tv_show" />
+                <meta property="og:url" content={window.location.href} />
+                <meta name="twitter:card" content="summary_large_image" />
+                <meta name="twitter:title" content={pageTitle} />
+                <meta name="twitter:description" content={pageDesc} />
+                <meta name="twitter:image" content={pageImage} />
+            </Helmet>
             <NavBar />
 
             <S.Backdrop src={serie?.backdrop || serie?.poster} />
