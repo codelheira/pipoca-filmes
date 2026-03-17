@@ -237,7 +237,7 @@ export const useWebRTCVoice = () => {
             let peer = peersRef.current[from];
             
             if (signalData.type === 'offer') {
-                const offerCollision = makingOfferRef.current[from] || peer?.signalingState !== "stable";
+                const offerCollision = makingOfferRef.current[from] || (peer && peer.signalingState !== "stable");
                 ignoreOfferRef.current[from] = !isPolite && offerCollision;
 
                 if (ignoreOfferRef.current[from]) {
@@ -249,18 +249,16 @@ export const useWebRTCVoice = () => {
                     peer = createPeer(from);
                 }
 
-                // iPhone Safari: ensure audio transceiver is ready to receive
-                if (peer.getTransceivers().length === 0) {
-                    peer.addTransceiver('audio', { direction: 'sendrecv' });
+                if (offerCollision) {
+                    console.log(`[WebRTC] Colisão detectada e resolvendo via rollback (polite) para ${from}`);
+                    await peer.setLocalDescription({ type: "rollback" });
                 }
 
                 await peer.setRemoteDescription(new RTCSessionDescription(signalData));
                 await flushPendingCandidates(from);
                 
-                if (signalData.type === "offer") {
-                    await peer.setLocalDescription();
-                    sendSignalRef.current(from, peer.localDescription);
-                }
+                await peer.setLocalDescription();
+                sendSignalRef.current(from, peer.localDescription);
                 
             } else if (signalData.type === 'answer') {
                 if (peer) {
@@ -268,8 +266,7 @@ export const useWebRTCVoice = () => {
                     await flushPendingCandidates(from);
                 }
             } else if (signalData.type === 'candidate') {
-                if (!peer) {
-                    // Se receber candidate antes da offer/peer existir, guarda
+                if (!peer || !peer.remoteDescription) {
                     if (!pendingCandidatesRef.current[from]) pendingCandidatesRef.current[from] = [];
                     pendingCandidatesRef.current[from].push(signalData.candidate);
                     return;
@@ -286,6 +283,7 @@ export const useWebRTCVoice = () => {
         } catch (e) { 
             console.error(`[WebRTC] Signal erro de ${from}:`, e); 
         }
+
     }, [createPeer, flushPendingCandidates, localUser?.id]);
 
 
