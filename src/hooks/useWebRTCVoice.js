@@ -182,6 +182,12 @@ export const useWebRTCVoice = () => {
             try {
                 console.log(`[WebRTC] Negotiation needed para ${targetId}`);
                 makingOfferRef.current[targetId] = true;
+                
+                // Força transceiver audio para Safari
+                if (peer.getTransceivers().length === 0) {
+                    peer.addTransceiver('audio', { direction: 'sendrecv' });
+                }
+                
                 await peer.setLocalDescription();
                 sendSignalRef.current(targetId, peer.localDescription);
             } catch (e) { 
@@ -215,6 +221,7 @@ export const useWebRTCVoice = () => {
         return peer;
     }, []);
 
+
     const handleSignal = useCallback(async (event) => {
         const data = event.detail;
         if (data.type !== 'signal') return;
@@ -242,6 +249,11 @@ export const useWebRTCVoice = () => {
                     peer = createPeer(from);
                 }
 
+                // iPhone Safari: ensure audio transceiver is ready to receive
+                if (peer.getTransceivers().length === 0) {
+                    peer.addTransceiver('audio', { direction: 'sendrecv' });
+                }
+
                 await peer.setRemoteDescription(new RTCSessionDescription(signalData));
                 await flushPendingCandidates(from);
                 
@@ -264,11 +276,7 @@ export const useWebRTCVoice = () => {
                 }
 
                 try {
-                    if (peer.remoteDescription) {
-                        await peer.addIceCandidate(new RTCIceCandidate(signalData.candidate));
-                    } else {
-                        pendingCandidatesRef.current[from].push(signalData.candidate);
-                    }
+                    await peer.addIceCandidate(new RTCIceCandidate(signalData.candidate));
                 } catch (e) {
                     if (!ignoreOfferRef.current[from]) {
                         console.warn(`[WebRTC] Erro ao adicionar ICE candidate de ${from}:`, e);
@@ -279,6 +287,7 @@ export const useWebRTCVoice = () => {
             console.error(`[WebRTC] Signal erro de ${from}:`, e); 
         }
     }, [createPeer, flushPendingCandidates, localUser?.id]);
+
 
 
     useEffect(() => {
@@ -308,11 +317,10 @@ export const useWebRTCVoice = () => {
 
         participants.forEach(p => {
             if (p.id !== myId && !peersRef.current[p.id]) {
-                // Lógica de "Polite Peer": quem tem o ID menor inicia. 
-                // Com sessionStorage, myId e p.id serão sempre diferentes em abas diferentes.
-                if (myId < p.id) {
-                    createPeer(p.id, true);
-                }
+                // Removemos o bloqueio de ID menor/maior para criação inicial
+                // O Perfect Negotiation se encarrega de estabilizar se ambos criarem ao mesmo tempo.
+                // Isso ajuda em dispositivos móveis que podem demorar a trigar onnegotiationneeded.
+                createPeer(p.id);
             }
         });
     }, [participants, localUser?.id, micReady, createPeer]);
