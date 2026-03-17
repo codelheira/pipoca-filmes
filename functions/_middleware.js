@@ -6,28 +6,37 @@ export async function onRequest(context) {
   const isBot = /WhatsApp|facebookexternalhit|Twitterbot|Slackbot|Discordbot|TelegramBot|Googlebot|metatags.io|opengraph.xyz/i.test(userAgent);
   const isWatch = url.pathname.includes('/watch/filme/') || url.pathname.includes('/watch/serie/');
 
-  // Se não for bot ou não for página de assistir, segue o fluxo normal
   if (!isBot || !isWatch) {
     return await next();
   }
+
+  let debugInfo = "";
 
   try {
     const match = url.pathname.match(/\/watch\/(filme|serie)\/([^/]+)/);
     if (!match) return await next();
     
     const type = match[1];
-    const slug = match[2].split('?')[0]; // Remove query params
+    const slug = match[2].split('?')[0];
     
     const API_BASE = "https://pipoca-backend-jazs.onrender.com/api";
     const infoUrl = `${API_BASE}/${type}/${slug}`;
     
-    // Busca os dados - Timeout de 5 segundos para não travar o carregamento
-    const apiResponse = await fetch(infoUrl, { signal: AbortSignal.timeout(5000) });
-    if (!apiResponse.ok) return await next();
+    debugInfo += `Fetching ${infoUrl}... `;
+    
+    const apiResponse = await fetch(infoUrl, { 
+      signal: AbortSignal.timeout(6000),
+      headers: { 'Accept': 'application/json' }
+    });
+
+    if (!apiResponse.ok) {
+        debugInfo += `API error: ${apiResponse.status}`;
+        throw new Error(`API error: ${apiResponse.status}`);
+    }
     
     const data = await apiResponse.json();
+    debugInfo += `Success! Found ${data.name}. `;
     
-    // Buscamos o HTML original e o transformamos
     const response = await next();
     let html = await response.text();
 
@@ -36,7 +45,7 @@ export async function onRequest(context) {
     const image = data.poster || data.backdrop;
 
     const metaTags = `
-  <!-- Social Preview Middleware -->
+  <!-- Social Preview Injected -->
   <title>${title}</title>
   <meta name="description" content="${description}">
   <meta property="og:title" content="${title}">
@@ -50,21 +59,31 @@ export async function onRequest(context) {
   <meta name="twitter:image" content="${image}">
 `;
 
-    // Remove tags existentes e injeta novas
+    // Remove tags existentes para não duplicar
     html = html.replace(/<title>.*?<\/title>/gi, '');
-    html = html.replace(/<meta property="og:.*?>/gi, '');
+    html = html.replace(/<meta property="og:title".*?>/gi, '');
+    html = html.replace(/<meta property="og:image".*?>/gi, '');
+    html = html.replace(/<meta property="og:description".*?>/gi, '');
+    
+    // Injeta as novas
     html = html.replace('</head>', `${metaTags}</head>`);
 
     return new Response(html, {
       headers: {
+        ...response.headers, // Mantém headers originais
         'content-type': 'text/html;charset=UTF-8',
-        'x-preview-debug': `Injected for ${slug}`,
-        'cache-control': 'public, max-age=3600'
+        'x-social-preview': 'active',
+        'x-debug-info': debugInfo
       },
     });
 
   } catch (err) {
-    console.error('Middleware Preview error:', err);
-    return await next();
+    return new Response(await (await next()).text(), {
+        headers: {
+            'x-social-preview-error': err.message,
+            'x-debug-info': debugInfo,
+            'content-type': 'text/html;charset=UTF-8'
+        }
+    });
   }
 }
