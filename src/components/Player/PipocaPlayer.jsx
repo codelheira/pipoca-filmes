@@ -88,9 +88,9 @@ const PipocaPlayer = ({ streamData, poster, slug, mediaTitle }) => {
     
     // Client-Side Cast Hook
     const { isCasting, castActiveDevice, triggerNativePicker, stopCast } = useCast(videoRef, {
-        url: `${API_URL}/video-proxy?url=${encodeURIComponent(streamData?.url)}`,
-        title: movieData?.title || 'Reproduzindo Pipoca Filmes',
-        poster: movieData?.poster,
+        url: streamData?.url ? `${API_URL}/video-proxy?url=${encodeURIComponent(streamData.url)}` : '',
+        title: mediaTitle || 'Reproduzindo Pipoca Filmes',
+        poster: poster,
         type: streamData?.type || 'video/mp4'
     });
 
