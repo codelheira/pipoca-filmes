@@ -27,3 +27,5 @@ const getWsUrl = () => {
 
 export const API_URL = getApiUrl();
 export const WS_URL = getWsUrl();
+export const SOCKET_URL = API_URL.replace('/api', '');
+

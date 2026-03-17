@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import axios from 'axios';
+import { io } from 'socket.io-client';
 import { useAuth } from './AuthContext';
-import { API_URL, WS_URL } from '../config';
+import { API_URL, WS_URL, SOCKET_URL } from '../config';
 
 const TransmissionContext = createContext();
 
@@ -16,14 +17,12 @@ export const TransmissionProvider = ({ children }) => {
     const [title, setTitle] = useState('');
     const [localUser, setLocalUser] = useState(null);
     
-    // WebRTC e WebSocket Refs
-    const wsRef = useRef(null);
+    // Socket.io Ref
+    const socketRef = useRef(null);
 
     // Gerar ou recuperar ID anônimo se não estiver logado
     const getUserId = () => {
         if (user) return user.id || user.sub;
-        // Correção: Usar sessionStorage em vez de localStorage para permitir 
-        // testes em múltiplas abas no mesmo computador sem colisão de IDs.
         let anonId = sessionStorage.getItem('anon_id');
         if (!anonId) {
             anonId = 'anon_' + Math.random().toString(36).substr(2, 9);
@@ -31,8 +30,6 @@ export const TransmissionProvider = ({ children }) => {
         }
         return anonId;
     };
-
-
 
     // Initialize localUser
     useEffect(() => {
@@ -48,11 +45,11 @@ export const TransmissionProvider = ({ children }) => {
         });
     }, [user, role]);
 
-    // Cleanup when unmounting or leaving
+    // Cleanup when unmounting
     useEffect(() => {
         return () => {
-            if (wsRef.current) {
-                wsRef.current.close();
+            if (socketRef.current) {
+                socketRef.current.disconnect();
             }
         };
     }, []);
@@ -74,7 +71,7 @@ export const TransmissionProvider = ({ children }) => {
             setRole(joinedRole);
             setIsLiveMode(true);
 
-            connectWebSocket(joinToken, userId);
+            connectSocket(joinToken, userId);
             return true;
         } catch (error) {
             console.error("Erro ao entrar na transmissão:", error);
@@ -101,12 +98,10 @@ export const TransmissionProvider = ({ children }) => {
             setRole('host');
             setIsLiveMode(true);
 
-            connectWebSocket(newToken, userId);
+            connectSocket(newToken, userId);
             
-            // Retorna o link para copiar
+            // Link para compartilhar
             let shareOrigin = window.location.origin;
-            // Se o host estiver usando localhost, o link pra compartilhar não funcionaria no celular.
-            // Vamos mudar localhost para o IP real da rede do servidor.
             if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
                 try {
                     const { data: netData } = await axios.get(`${API_URL}/network-ip`);
@@ -114,7 +109,7 @@ export const TransmissionProvider = ({ children }) => {
                         shareOrigin = `http://${netData.ip}:3000`;
                     }
                 } catch (err) {
-                    console.error("Não foi possível resolver o IP da rede para o link compartilhável.");
+                    console.error("Não foi possível resolver o IP da rede.");
                 }
             }
             
@@ -126,53 +121,62 @@ export const TransmissionProvider = ({ children }) => {
         }
     };
 
-    const connectWebSocket = (roomToken, userId) => {
-        if (wsRef.current) {
-            wsRef.current.close();
-            wsRef.current = null;
+    const connectSocket = (roomToken, userId) => {
+        if (socketRef.current) {
+            socketRef.current.disconnect();
         }
 
-        // Delay de segurança: garante que o join (HTTP) salvou no Python antes do WS tentar conectar.
-        setTimeout(() => {
-            const wsUrl = `${WS_URL}/transmission/ws/${roomToken}/${userId}`;
-            console.log("Tentando conectar WS:", wsUrl);
-            const ws = new WebSocket(wsUrl);
+        const socket = io(SOCKET_URL, {
+            query: {
+                token: roomToken,
+                user_id: userId
+            },
+            transports: ['websocket', 'polling'] // Tenta websocket primeiro
+        });
 
-            ws.onopen = () => {
-                console.log("WebSocket Transmissão Conectado");
-            };
+        socket.on('connect', () => {
+            console.log("Socket.io Conectado");
+        });
 
-            ws.onmessage = (event) => {
-                try {
-                    const data = JSON.parse(event.data);
-                    if (data.type === 'state') {
-                        setParticipants(data.participants);
-                        setTitle(data.title);
-                    } else if (data.type === 'room_closed') {
-                        alert('O Host encerrou a transmissão.');
-                        leaveTransmission();
-                    } else {
-                        // Outras mensagens como sync_play, signal, etc serão tratadas via event listener custom
-                        const customEvent = new CustomEvent('transmission_msg', { detail: data });
-                        window.dispatchEvent(customEvent);
-                    }
-                } catch (e) {
-                    console.error("Erro no WS:", e);
-                }
-            };
+        socket.on('state', (data) => {
+            setParticipants(data.participants);
+            setTitle(data.title);
+        });
 
-            ws.onclose = () => {
-                console.log("WebSocket Transmissão Fechado");
-            };
+        socket.on('room_closed', () => {
+            alert('O Host encerrou a transmissão.');
+            leaveTransmission();
+        });
 
-            wsRef.current = ws;
-        }, 300);
+        // Eventos de sincronismo vindos do host redirecionados para o player
+        socket.on('sync_command', (data) => {
+            const customEvent = new CustomEvent('transmission_msg', { detail: data });
+            window.dispatchEvent(customEvent);
+        });
+
+        // Eventos de WebRTC Signaling
+        socket.on('signal', (data) => {
+            const customEvent = new CustomEvent('transmission_msg', { detail: { type: 'signal', ...data } });
+            window.dispatchEvent(customEvent);
+        });
+
+        // Confirmação de convidado pronto
+        socket.on('guest_ready', (data) => {
+            const customEvent = new CustomEvent('transmission_msg', { detail: { type: 'guest_ready', ...data } });
+            window.dispatchEvent(customEvent);
+        });
+
+        socket.on('disconnect', () => {
+            console.log("Socket.io Desconectado");
+        });
+
+        socketRef.current = socket;
     };
 
     const leaveTransmission = () => {
-        if (wsRef.current) {
-            wsRef.current.close();
-            wsRef.current = null;
+        if (socketRef.current) {
+            socketRef.current.disconnect();
+            socketRef.current = null;
         }
         setIsLiveMode(false);
         setToken(null);
@@ -186,9 +190,8 @@ export const TransmissionProvider = ({ children }) => {
     };
 
     const sendSyncCommand = (command, timeOrData = null) => {
-        if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
+        if (!socketRef.current || !socketRef.current.connected) return;
         
-        // Se for Guest, ele SÓ pode enviar o comando 'guest_ready'
         if (role === 'guest' && command !== 'guest_ready') return;
         if (role !== 'host' && role !== 'guest') return;
         
@@ -197,17 +200,21 @@ export const TransmissionProvider = ({ children }) => {
             payload.time = timeOrData;
         }
         
-        wsRef.current.send(JSON.stringify(payload));
+        if (command === 'guest_ready') {
+            socketRef.current.emit('guest_ready', payload);
+        } else {
+            socketRef.current.emit('sync_command', payload);
+        }
     };
 
     const sendSignal = (targetId, signalData) => {
-        if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
-        wsRef.current.send(JSON.stringify({
-            type: 'signal',
+        if (!socketRef.current || !socketRef.current.connected) return;
+        socketRef.current.emit('signal', {
             target: targetId,
             signalData
-        }));
+        });
     };
+
 
     return (
         <TransmissionContext.Provider value={{
