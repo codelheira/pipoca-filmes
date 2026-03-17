@@ -46,9 +46,11 @@ const RemoteAudio = ({ stream, muted, userId }) => {
             ref={audioRef} 
             autoPlay 
             playsInline 
+            webkit-playsinline="true"
             muted={muted} 
             style={{ display: 'none' }} 
         />
+
     );
 };
 
@@ -62,7 +64,8 @@ const PipocaPlayer = ({ streamData, poster, slug, mediaTitle }) => {
     
     // Transmission (Watch2Gether) logic
     const { isLiveMode, role, sendSyncCommand, participants, createTransmission, leaveTransmission, localUser } = useTransmission();
-    const { isMuted: voiceMuted, toggleMute: toggleVoiceMute, audioStreams, speakingUsers, micReady } = useWebRTCVoice();
+    const { isMuted: voiceMuted, toggleMute: toggleVoiceMute, audioStreams, speakingUsers, micReady, startMic } = useWebRTCVoice();
+
     
     const [isPlaying, setIsPlaying] = useState(false)
     const [progress, setProgress] = useState(0)
@@ -656,9 +659,12 @@ const PipocaPlayer = ({ streamData, poster, slug, mediaTitle }) => {
                                 videoRef.current.play().then(() => {
                                     setIsAutoplayBlocked(false);
                                     setIsPlaying(true);
+                                    // Kick no microfone também após interação
+                                    startMic().catch(e => console.error("Erro recomeçar mic:", e));
                                 }).catch(e => console.error("Ainda bloqueado:", e));
                             }
                         }}
+
                         style={{ 
                             background: '#cae962', color: '#000', padding: '15px 30px', 
                             fontSize: '1.2rem', fontWeight: 'bold', borderRadius: '12px' 

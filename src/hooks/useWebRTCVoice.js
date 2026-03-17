@@ -332,5 +332,5 @@ export const useWebRTCVoice = () => {
         return () => stopMic();
     }, [isLiveMode, !!localUser]);
 
-    return { isMuted, toggleMute, audioStreams, speakingUsers, micReady };
+    return { isMuted, toggleMute, audioStreams, speakingUsers, micReady, startMic };
 };
