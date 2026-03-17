@@ -20,7 +20,7 @@ export async function onRequest(context) {
     const slug = match[2].split('?')[0];
     
     const API_BASE = "https://pipoca-backend-jazs.onrender.com/api";
-    const infoUrl = `${API_BASE}/${type}/${slug}`;
+    const infoUrl = `${API_BASE}/info/${type}/${slug}`;
     
     debugInfo += `Fetching ${infoUrl}... `;
     
