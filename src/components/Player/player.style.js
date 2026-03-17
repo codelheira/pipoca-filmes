@@ -370,7 +370,7 @@ P.TransmissionBadge = styled.div`
   position: absolute;
   top: 20px;
   right: 20px;
-  background-color: #dc2626;
+  background-color: rgba(220, 38, 38, 0.6);
   color: white;
   padding: 6px 12px;
   border-radius: 8px;
@@ -384,7 +384,14 @@ P.TransmissionBadge = styled.div`
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
   user-select: none;
   backdrop-filter: blur(4px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+
+  &:hover {
+    background-color: rgba(220, 38, 38, 0.85);
+    transform: scale(1.05);
+  }
+
 
   @media (max-width: 576px) {
     top: 10px;
