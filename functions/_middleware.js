@@ -1,7 +1,10 @@
-const API_BASE = "https://pipoca-backend-jazs.onrender.com/api";
-
 export async function onRequest(context) {
-  const { request, next } = context;
+  const { request, next, env } = context;
+  
+  // Use a variável de ambiente VITE_API_BASE_URL (configurada no painel da Cloudflare)
+  // Se não estiver definida, usa o valor de produção como fallback
+  const API_BASE = env.VITE_API_BASE_URL || "https://pipoca-backend-jazs.onrender.com/api";
+
   const url = new URL(request.url);
   const userAgent = request.headers.get('user-agent') || '';
   
