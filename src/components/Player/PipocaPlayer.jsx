@@ -86,7 +86,8 @@ const PipocaPlayer = ({ streamData, poster, slug, mediaTitle }) => {
     const [copied, setCopied] = useState(false);
     const [roomLink, setRoomLink] = useState('');
     const [localMutedUsers, setLocalMutedUsers] = useState({});
-    const [isAutoplayBlocked, setIsAutoplayBlocked] = useState(false);
+    const [isAutoplayBlocked, setIsAutoplayBlocked] = useState(isLiveMode && role === 'guest');
+
 
 
     const [skipAnim, setSkipAnim] = useState(null)
@@ -171,17 +172,24 @@ const PipocaPlayer = ({ streamData, poster, slug, mediaTitle }) => {
         if (!isLiveMode || role !== 'host' || !participants) return;
         
         if (participants.length > prevParticipantsCount.current) {
-            // Agora pausamos o Host INDEPENDENTE se ele está dando play ou não.
-            // Isso trava o botão de Play do Host até o convidado estar pronto.
             waitingPause('new_guest', 8000);
         }
         prevParticipantsCount.current = participants.length;
     }, [participants, isLiveMode, role, sendSyncCommand]);
 
+    // Reinicializa o estado de bloqueio se o modo live mudar ou se tornar guest
+    useEffect(() => {
+        if (isLiveMode && role === 'guest') {
+            setIsAutoplayBlocked(true);
+        }
+    }, [isLiveMode, role]);
+
+
     // Auto-hide controls
     useEffect(() => {
         let timeout;
         if (showControls && isPlaying) {
+
             timeout = setTimeout(() => setShowControls(false), 3000);
         }
         return () => clearTimeout(timeout);
@@ -650,33 +658,41 @@ const PipocaPlayer = ({ streamData, poster, slug, mediaTitle }) => {
                 </div>
             )}
 
-            {/* Guest Autoplay/Interaction Overlay */}
+            {/* Guest Autoplay/Interaction Overlay - PADRONIZADO */}
             {isLiveMode && role === 'guest' && isAutoplayBlocked && (
-                <P.BufferContainer visible={true} style={{ pointerEvents: 'auto' }}>
+                <P.BufferContainer visible={true} style={{ pointerEvents: 'auto', background: 'rgba(0,0,0,0.85)', width: '100%', height: '100%' }}>
                     <P.ControlBtn 
                         onClick={() => {
                             if (videoRef.current) {
                                 videoRef.current.play().then(() => {
                                     setIsAutoplayBlocked(false);
                                     setIsPlaying(true);
-                                    // Kick no microfone também após interação
-                                    startMic().catch(e => console.error("Erro recomeçar mic:", e));
-                                }).catch(e => console.error("Ainda bloqueado:", e));
+                                    startMic().catch(e => console.error("Erro mic:", e));
+                                }).catch(() => {
+                                    // Se falhar o play (raro com clique), pelo menos tenta o mic
+                                    setIsAutoplayBlocked(false);
+                                    startMic().catch(e => console.error("Erro mic:", e));
+                                });
+                            } else {
+                                setIsAutoplayBlocked(false);
+                                startMic().catch(e => console.error("Erro mic:", e));
                             }
                         }}
-
                         style={{ 
-                            background: '#cae962', color: '#000', padding: '15px 30px', 
-                            fontSize: '1.2rem', fontWeight: 'bold', borderRadius: '12px' 
+                            background: '#cae962', color: '#000', padding: '18px 40px', 
+                            fontSize: '1.4rem', fontWeight: '900', borderRadius: '15px',
+                            boxShadow: '0 0 30px rgba(202, 233, 98, 0.4)',
+                            transition: 'all 0.3s ease'
                         }}
                     >
-                        <FaPlay style={{ marginRight: '10px' }} /> ENTRAR NA LIVE
+                        <FaPlay style={{ marginRight: '15px' }} /> CONECTAR À TRANSMISSÃO
                     </P.ControlBtn>
-                    <P.BufferText style={{ marginTop: '10px', background: 'transparent', border: 'none' }}>
-                        Toque no botão para iniciar a sincronia
+                    <P.BufferText style={{ marginTop: '20px', background: 'transparent', border: 'none', color: '#fff', fontSize: '1rem', opacity: 0.8 }}>
+                        Clique para ativar áudio, vídeo e microfone
                     </P.BufferText>
                 </P.BufferContainer>
             )}
+
 
             {/* Guest Overlay */}
             {isLiveMode && role === 'guest' && !isAutoplayBlocked && (
