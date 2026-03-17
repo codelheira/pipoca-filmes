@@ -21,10 +21,12 @@ export const TransmissionProvider = ({ children }) => {
     // Gerar ou recuperar ID anônimo se não estiver logado
     const getUserId = () => {
         if (user) return user.id || user.sub;
-        let anonId = localStorage.getItem('anon_id');
+        // Correção: Usar sessionStorage em vez de localStorage para permitir 
+        // testes em múltiplas abas no mesmo computador sem colisão de IDs.
+        let anonId = sessionStorage.getItem('anon_id');
         if (!anonId) {
             anonId = 'anon_' + Math.random().toString(36).substr(2, 9);
-            localStorage.setItem('anon_id', anonId);
+            sessionStorage.setItem('anon_id', anonId);
         }
         return anonId;
     };
