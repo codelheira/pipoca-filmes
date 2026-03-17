@@ -3,6 +3,7 @@ import { D } from './discussion.style'
 import axios from 'axios'
 import avatarPlaceholder from '../../assets/images/avatar2-04.png'
 import { IoChatbubbleOutline, IoShareOutline, IoHeartOutline, IoFlagOutline } from 'react-icons/io5'
+import { API_URL } from '../../config';
 
 const DiscussionItem = ({ discussion }) => {
   const [isVisible, setIsVisible] = useState(false)
@@ -122,8 +123,8 @@ const Discussion = ({ tmdbId, tipo }) => {
     const fetchDiscussions = async () => {
       setLoading(true)
       try {
-        const API_BASE = import.meta.env.VITE_API_BASE_URL || `http://${window.location.hostname}:8000/api`;
-        const response = await axios.get(`${API_BASE}/discussions/${tipo}/${tmdbId}`)
+
+        const response = await axios.get(`${API_URL}/discussions/${tipo}/${tmdbId}`)
         setDiscussions(response.data)
       } catch (error) {
         console.error("Erro ao buscar discussões:", error)

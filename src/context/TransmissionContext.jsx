@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useAuth } from './AuthContext';
+import { API_URL, WS_URL } from '../config';
 
 const TransmissionContext = createContext();
 
@@ -31,7 +32,7 @@ export const TransmissionProvider = ({ children }) => {
         return anonId;
     };
 
-    const API_URL = import.meta.env.VITE_API_BASE_URL || `http://${window.location.hostname}:8000/api`;
+
 
     // Initialize localUser
     useEffect(() => {
@@ -133,8 +134,7 @@ export const TransmissionProvider = ({ children }) => {
 
         // Delay de segurança: garante que o join (HTTP) salvou no Python antes do WS tentar conectar.
         setTimeout(() => {
-            const wsBase = import.meta.env.VITE_WS_BASE_URL || `ws://${window.location.hostname}:8000/api`;
-            const wsUrl = `${wsBase}/transmission/ws/${roomToken}/${userId}`;
+            const wsUrl = `${WS_URL}/transmission/ws/${roomToken}/${userId}`;
             console.log("Tentando conectar WS:", wsUrl);
             const ws = new WebSocket(wsUrl);
 

@@ -1,7 +1,7 @@
 import React from 'react'
 import axios from 'axios'
 import { useQuery } from '@tanstack/react-query'
-const API_URL = import.meta.env.VITE_API_BASE_URL || `http://${window.location.hostname}:8000/api`;
+import { API_URL } from '../config';
 
 export function useLatestEpisode() {
   const TopAiringAnime = async () => {
