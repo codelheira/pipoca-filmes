@@ -34,7 +34,8 @@ const PipocaPlayer = ({ streamData, poster, slug, mediaTitle }) => {
     const initialSeekDone = useRef(false)
     
     // Contexts
-    const { isLiveMode, role, sendSyncCommand, participants, createTransmission, leaveTransmission, localUser, connectRoom } = useTransmission();
+    const { isLiveMode, role, sendSyncCommand, participants, createTransmission, leaveTransmission, localUser, connectRoom, remoteMutedUsers } = useTransmission();
+
     const { isMuted: voiceMuted, toggleMute: toggleVoiceMute, audioStreams, speakingUsers, micReady, startMic } = useWebRTCVoice();
     
     // Sync Hook
@@ -473,8 +474,10 @@ const PipocaPlayer = ({ streamData, poster, slug, mediaTitle }) => {
                 open={sidebarOpen} onClose={() => setSidebarOpen(false)} 
                 participants={participants} speakingUsers={speakingUsers} 
                 localUser={localUser} localMutedUsers={localMutedUsers} 
-                onLocalMute={handleLocalMute} 
+                onLocalMute={handleLocalMute}
+                remoteMutedUsers={remoteMutedUsers}
             />
+
 
             <P.PlayerControls visible={showControls} onClick={e => e.stopPropagation()}>
                 <div style={{ display: 'flex', paddingLeft: '4px', marginBottom: '-5px' }}>

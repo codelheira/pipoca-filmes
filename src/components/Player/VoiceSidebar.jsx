@@ -1,5 +1,6 @@
 import React from 'react';
-import { FaUsers, FaTimes, FaVolumeMute, FaVolumeUp } from 'react-icons/fa';
+import { FaUsers, FaTimes, FaVolumeMute, FaVolumeUp, FaMicrophoneSlash } from 'react-icons/fa';
+
 import { P } from './player.style';
 
 const VoiceSidebar = ({ 
@@ -9,7 +10,8 @@ const VoiceSidebar = ({
     speakingUsers, 
     localUser, 
     localMutedUsers, 
-    onLocalMute 
+    onLocalMute,
+    remoteMutedUsers 
 }) => {
     return (
         <P.Sidebar open={open}>
@@ -24,6 +26,7 @@ const VoiceSidebar = ({
                 {participants?.map(p => {
                     const isSpeaking = speakingUsers[p.id];
                     const isMe = localUser && (localUser.id === p.id);
+                    const isMutedByThemselves = remoteMutedUsers?.[p.id];
                     
                     return (
                         <P.ParticipantItem key={p.id} isSpeaking={isSpeaking}>
@@ -32,9 +35,13 @@ const VoiceSidebar = ({
                                 isSpeaking={isSpeaking} 
                             />
                             <P.ParticipantInfo>
-                                <span className="name">{isMe ? `${p.name} (Você)` : p.name}</span>
+                                <span className="name">
+                                    {isMe ? `${p.name} (Você)` : p.name}
+                                    {isMutedByThemselves && <FaMicrophoneSlash style={{ color: '#dc2626', marginLeft: '8px', fontSize: '0.9em' }} title="Microfone Desativado" />}
+                                </span>
                                 <span className="role">{p.role}</span>
                             </P.ParticipantInfo>
+
                             {!isMe && (
                                 <P.MuteToggle 
                                     muted={localMutedUsers[p.id]} 

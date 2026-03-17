@@ -19,7 +19,8 @@ const ICE_SERVERS = {
 };
 
 export const useWebRTCVoice = () => {
-    const { isLiveMode, participants, localUser, role, sendSignal } = useTransmission();
+    const { isLiveMode, participants, localUser, role, sendSignal, sendSyncCommand } = useTransmission();
+
 
     const [isMuted, setIsMuted] = useState(false);
     const [audioStreams, setAudioStreams] = useState({}); 
@@ -106,7 +107,16 @@ export const useWebRTCVoice = () => {
             });
         }
         setIsMuted(newState);
-    }, [isMuted]);
+        
+        // Broadcast mute status to everyone
+        if (localUser) {
+            sendSyncCommand('user_mute_status', { 
+                user_id: localUser.id, 
+                is_muted: newState 
+            });
+        }
+    }, [isMuted, localUser, sendSyncCommand]);
+
 
     const setupVAD = (userId, stream, isLocal) => {
         try {
@@ -331,6 +341,17 @@ export const useWebRTCVoice = () => {
             startMic();
         }
     }, [isLiveMode, !!localUser, role, startMic]);
+
+    useEffect(() => {
+        if (micReady && localUser) {
+            // Garante que todos saibam o estado inicial (desmutado)
+            sendSyncCommand('user_mute_status', { 
+                user_id: localUser.id, 
+                is_muted: isMuted 
+            });
+        }
+    }, [micReady, localUser, isMuted, sendSyncCommand]);
+
 
     useEffect(() => {
         if (!isLiveMode) {

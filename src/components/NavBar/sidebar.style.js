@@ -9,10 +9,11 @@ S.SideMenu = styled.div`
   top: 0;
   left: 0;
   height: 100vh;
+  height: 100dvh;
   width: 260px;
   background-color: #2a2c31;
   transform: ${({ open }) => (!open ? 'translateX(-350px)' : 'translateX(0)')};
-  margin-bottom: 2000px;
+  padding-bottom: calc(80px + env(safe-area-inset-bottom));
   overflow-y: auto;
   gap: 1em;
   z-index: 1100;

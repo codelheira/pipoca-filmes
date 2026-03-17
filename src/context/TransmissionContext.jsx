@@ -17,6 +17,8 @@ export const TransmissionProvider = ({ children }) => {
     const [title, setTitle] = useState('');
     const [localUser, setLocalUser] = useState(null);
     const [isSocketConnected, setIsSocketConnected] = useState(false);
+    const [remoteMutedUsers, setRemoteMutedUsers] = useState({}); // { userId: boolean }
+
 
     
     // Socket.io Ref
@@ -156,9 +158,16 @@ export const TransmissionProvider = ({ children }) => {
 
         // Eventos de sincronismo vindos do host redirecionados para o player
         socket.on('sync_command', (data) => {
+            if (data.type === 'user_mute_status') {
+                setRemoteMutedUsers(prev => ({
+                    ...prev,
+                    [data.user_id]: data.is_muted
+                }));
+            }
             const customEvent = new CustomEvent('transmission_msg', { detail: data });
             window.dispatchEvent(customEvent);
         });
+
 
         // Eventos de WebRTC Signaling
         socket.on('signal', (data) => {
@@ -198,6 +207,8 @@ export const TransmissionProvider = ({ children }) => {
         setRole(null);
         setParticipants([]);
         setIsSocketConnected(false);
+        setRemoteMutedUsers({});
+
 
         
         // Remove param from url
@@ -209,7 +220,8 @@ export const TransmissionProvider = ({ children }) => {
     const sendSyncCommand = (command, timeOrData = null) => {
         if (!socketRef.current || !socketRef.current.connected) return;
         
-        if (role === 'guest' && command !== 'guest_ready') return;
+        if (role === 'guest' && command !== 'guest_ready' && command !== 'user_mute_status') return;
+
         if (role !== 'host' && role !== 'guest') return;
         
         const payload = { type: command };
@@ -247,10 +259,11 @@ export const TransmissionProvider = ({ children }) => {
             sendSignal,
             connectRoom,
             isSocketConnected,
-
+            remoteMutedUsers,
             user,
             localUser
         }}>
+
 
             {children}
         </TransmissionContext.Provider>
