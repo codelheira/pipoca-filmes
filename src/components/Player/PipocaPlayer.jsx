@@ -34,7 +34,7 @@ const PipocaPlayer = ({ streamData, poster, slug, mediaTitle }) => {
     const initialSeekDone = useRef(false)
     
     // Contexts
-    const { isLiveMode, role, sendSyncCommand, participants, createTransmission, leaveTransmission, localUser } = useTransmission();
+    const { isLiveMode, role, sendSyncCommand, participants, createTransmission, leaveTransmission, localUser, connectRoom } = useTransmission();
     const { isMuted: voiceMuted, toggleMute: toggleVoiceMute, audioStreams, speakingUsers, micReady, startMic } = useWebRTCVoice();
     
     // Sync Hook
@@ -426,6 +426,9 @@ const PipocaPlayer = ({ streamData, poster, slug, mediaTitle }) => {
                 isAutoplayBlocked={isAutoplayBlocked} 
                 isGuestWaitingSync={isGuestWaitingSync}
                 onConnect={() => {
+                    // Agora a entrada no Socket (e na lista de participantes) só acontece aqui!
+                    connectRoom();
+                    
                     videoRef.current?.play().then(() => {
                         handleInteraction();
                         setIsPlaying(true);
@@ -435,6 +438,7 @@ const PipocaPlayer = ({ streamData, poster, slug, mediaTitle }) => {
                         startMic().catch(e => console.error("Erro mic:", e));
                     });
                 }}
+
             />
 
 

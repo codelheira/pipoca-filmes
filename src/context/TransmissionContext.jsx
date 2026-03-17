@@ -16,6 +16,8 @@ export const TransmissionProvider = ({ children }) => {
     const [participants, setParticipants] = useState([]);
     const [title, setTitle] = useState('');
     const [localUser, setLocalUser] = useState(null);
+    const [isSocketConnected, setIsSocketConnected] = useState(false);
+
     
     // Socket.io Ref
     const socketRef = useRef(null);
@@ -71,8 +73,10 @@ export const TransmissionProvider = ({ children }) => {
             setRole(joinedRole);
             setIsLiveMode(true);
 
-            connectSocket(joinToken, userId);
+            // NÃO conectamos o socket aqui para guests. 
+            // Somente após o clique no botão "Conectar" no player.
             return true;
+
         } catch (error) {
             console.error("Erro ao entrar na transmissão:", error);
             alert("Não foi possível entrar na transmissão (Sala cheia ou não existe mais).");
@@ -136,7 +140,9 @@ export const TransmissionProvider = ({ children }) => {
 
         socket.on('connect', () => {
             console.log("Socket.io Conectado");
+            setIsSocketConnected(true);
         });
+
 
         socket.on('state', (data) => {
             setParticipants(data.participants);
@@ -168,10 +174,19 @@ export const TransmissionProvider = ({ children }) => {
 
         socket.on('disconnect', () => {
             console.log("Socket.io Desconectado");
+            setIsSocketConnected(false);
         });
 
         socketRef.current = socket;
     };
+
+    const connectRoom = () => {
+        if (token) {
+            connectSocket(token, getUserId());
+        }
+    };
+
+
 
     const leaveTransmission = () => {
         if (socketRef.current) {
@@ -182,6 +197,8 @@ export const TransmissionProvider = ({ children }) => {
         setToken(null);
         setRole(null);
         setParticipants([]);
+        setIsSocketConnected(false);
+
         
         // Remove param from url
         const url = new URL(window.location);
@@ -228,9 +245,13 @@ export const TransmissionProvider = ({ children }) => {
             leaveTransmission,
             sendSyncCommand,
             sendSignal,
+            connectRoom,
+            isSocketConnected,
+
             user,
             localUser
         }}>
+
             {children}
         </TransmissionContext.Provider>
     );
