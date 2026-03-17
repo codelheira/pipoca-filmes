@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { 
     FaPlay, FaPause, FaVolumeUp, FaVolumeMute, FaExpand, FaCompress, 
     FaForward, FaBackward, FaSync, FaUsers, FaMicrophone, FaMicrophoneSlash,
@@ -29,7 +29,7 @@ const PipocaPlayer = ({ streamData, poster, slug, mediaTitle }) => {
     
     // Transmission (Watch2Gether) logic
     const { isLiveMode, role, sendSyncCommand, participants, createTransmission, leaveTransmission, localUser } = useTransmission();
-    const { isMuted: voiceMuted, toggleMute: toggleVoiceMute, audioStreams, speakingUsers } = useWebRTCVoice();
+    const { isMuted: voiceMuted, toggleMute: toggleVoiceMute, audioStreams, speakingUsers, micReady } = useWebRTCVoice();
     
     const [isPlaying, setIsPlaying] = useState(false)
     const [progress, setProgress] = useState(0)
@@ -66,28 +66,54 @@ const PipocaPlayer = ({ streamData, poster, slug, mediaTitle }) => {
     const wasPlayingBeforeScrub = useRef(false);
 
     // Voice Chat Audio Management
+    // Correção 7: Tratamento robusto de autoplay bloqueado pelo navegador.
+    // Quando o navegador recusa o play automático, registra um listener de
+    // interação (click/touch) para tentar novamente assim que o usuário agir.
+    const playAllAudio = useCallback(() => {
+        Object.values(audioElementsRef.current).forEach(audioEl => {
+            if (audioEl.paused && audioEl.srcObject) {
+                audioEl.play().catch(() => {
+                    // Ainda bloqueado — aguarda próxima interação
+                });
+            }
+        });
+    }, []);
+
     useEffect(() => {
         if (!isLiveMode) return;
 
+        // Adiciona ou atualiza elementos <audio> para cada stream remoto
         Object.keys(audioStreams).forEach(userId => {
             if (!audioElementsRef.current[userId]) {
                 const audio = document.createElement('audio');
                 audio.autoplay = true;
+                audio.playsInline = true;
                 audioElementsRef.current[userId] = audio;
             }
-            
+
             const audioEl = audioElementsRef.current[userId];
             const stream = audioStreams[userId];
-            
+
             if (audioEl.srcObject !== stream) {
                 audioEl.srcObject = stream;
             }
-            
+
             audioEl.muted = !!localMutedUsers[userId];
-            audioEl.play().catch(e => console.error("Audio block:", e));
+
+            audioEl.play().catch(() => {
+                // Correção 7: Autoplay bloqueado — retry na próxima interação do usuário
+                console.warn('[WebRTC] Autoplay bloqueado para', userId, '— aguardando interação.');
+                const resumeOnInteraction = () => {
+                    audioEl.play().catch(() => {});
+                    document.removeEventListener('click', resumeOnInteraction);
+                    document.removeEventListener('touchstart', resumeOnInteraction);
+                };
+                document.addEventListener('click', resumeOnInteraction, { once: true });
+                document.addEventListener('touchstart', resumeOnInteraction, { once: true });
+            });
         });
-        
-        // Cleanup missing
+
+        // Remove elementos de usuários que saíram
         const currentIds = Object.keys(audioStreams);
         Object.keys(audioElementsRef.current).forEach(id => {
             if (!currentIds.includes(id)) {
@@ -96,7 +122,7 @@ const PipocaPlayer = ({ streamData, poster, slug, mediaTitle }) => {
                 delete audioElementsRef.current[id];
             }
         });
-        
+
     }, [audioStreams, localMutedUsers, isLiveMode]);
 
     const handleLocalMute = (userId) => {
@@ -745,12 +771,24 @@ const PipocaPlayer = ({ streamData, poster, slug, mediaTitle }) => {
                         {isLiveMode ? (
                             <>
                                 <P.ControlBtn 
-                                    onClick={toggleVoiceMute} 
-                                    active={!voiceMuted}
+                                    onClick={micReady ? toggleVoiceMute : undefined}
+                                    active={!voiceMuted && micReady}
                                     isSpeaking={speakingUsers[localUser?.id]}
-                                    title={voiceMuted ? "Ligar Microfone" : "Silenciar Microfone"}
+                                    title={
+                                        !micReady
+                                            ? 'Iniciando microfone...'
+                                            : voiceMuted
+                                            ? 'Ligar Microfone'
+                                            : 'Silenciar Microfone'
+                                    }
+                                    style={{ opacity: micReady ? 1 : 0.5, cursor: micReady ? 'pointer' : 'wait' }}
                                 >
-                                    {voiceMuted ? <FaMicrophoneSlash color="#dc2626" /> : <FaMicrophone />}
+                                    {!micReady 
+                                        ? <FaSync className="fa-spin" style={{ fontSize: '0.85em' }} />
+                                        : voiceMuted 
+                                        ? <FaMicrophoneSlash color="#dc2626" /> 
+                                        : <FaMicrophone />
+                                    }
                                 </P.ControlBtn>
                                 
                                 <P.ControlBtn 
