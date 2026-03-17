@@ -30,7 +30,12 @@ export const useWebRTCVoice = () => {
     const [selectedInput, setSelectedInput] = useState('default');
     const [selectedOutput, setSelectedOutput] = useState('default');
     const [inputLevel, setInputLevel] = useState(0);
-    const [inputVolume, setInputVolume] = useState(1); // 0 to 1
+    const [testLevel, setTestLevel] = useState(0); 
+    const [inputVolume, setInputVolume] = useState(1); 
+    const [activeInput, setActiveInput] = useState('default');
+    const [activeVolume, setActiveVolume] = useState(1);
+
+
 
 
 
@@ -47,6 +52,8 @@ export const useWebRTCVoice = () => {
 
 
     const pendingCandidatesRef = useRef({}); 
+    const testStreamRef = useRef(null);
+    const testAnalyserRef = useRef(null);
     const inputVolumeNodeRef = useRef(null);
 
     const refreshDevices = useCallback(async () => {
@@ -119,8 +126,12 @@ export const useWebRTCVoice = () => {
             processedStreamRef.current = processedStream;
             processedStream.getAudioTracks().forEach(track => { track.enabled = !isMuted; });
 
+            setActiveInput(selectedInput);
+            setActiveVolume(inputVolume);
+
             console.log('[WebRTC] Microfone (Processado) OK.');
             setMicReady(true);
+
 
             // Importante: Atualiza os tracks nos peers existentes
             Object.values(peersRef.current).forEach(peer => {
@@ -460,6 +471,68 @@ export const useWebRTCVoice = () => {
         }
     }, [inputVolume]);
 
+    // Lógica de Preview/Teste de Microfone
+    useEffect(() => {
+        // Só rodamos o teste se o selectedInput for diferente do que está no stream atual
+        // OU se o usuário está com o modal aberto (podemos receber essa info por prop se quisermos, 
+        // mas o gatilho de mudar o selectedInput já é suficiente).
+        
+        let active = true;
+        
+        const runTest = async () => {
+            if (testStreamRef.current) {
+                testStreamRef.current.getTracks().forEach(t => t.stop());
+            }
+
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    audio: { 
+                        deviceId: selectedInput !== 'default' ? { exact: selectedInput } : undefined,
+                        echoCancellation: true, noiseSuppression: true 
+                    }
+                });
+                if (!active) { stream.getTracks().forEach(t => t.stop()); return; }
+                
+                testStreamRef.current = stream;
+                
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const source = ctx.createMediaStreamSource(stream);
+                const gainNode = ctx.createGain();
+                gainNode.gain.value = inputVolume; // Aplicamos o volume no teste também!
+                const analyser = ctx.createAnalyser();
+                analyser.fftSize = 256;
+                
+                source.connect(gainNode);
+                gainNode.connect(analyser);
+                
+                const update = () => {
+                    if (!active || !analyser) return;
+                    const dataArray = new Uint8Array(analyser.frequencyBinCount);
+                    analyser.getByteFrequencyData(dataArray);
+                    let sum = 0;
+                    for (let i = 0; i < dataArray.length; i++) sum += dataArray[i];
+                    setTestLevel(Math.min(100, (sum / dataArray.length) * 2));
+                    requestAnimationFrame(update);
+                };
+                update();
+                
+            } catch (e) {
+                console.warn("[WebRTC] Erro no teste de microfone:", e);
+                setTestLevel(0);
+            }
+        };
+
+        runTest();
+        
+        return () => {
+            active = false;
+            if (testStreamRef.current) {
+                testStreamRef.current.getTracks().forEach(t => t.stop());
+            }
+        };
+    }, [selectedInput, inputVolume]); // Reage a qualquer mudança nas configs "pendentes"
+
+
     useEffect(() => {
         if (!isLiveMode) {
             stopMic();
@@ -470,10 +543,18 @@ export const useWebRTCVoice = () => {
 
 
 
+    const cancelSettings = useCallback(() => {
+        setSelectedInput(activeInput);
+        setInputVolume(activeVolume);
+    }, [activeInput, activeVolume]);
+
     return { 
         isMuted, toggleMute, audioStreams, speakingUsers, micReady, startMic,
         devices, selectedInput, setSelectedInput, selectedOutput, setSelectedOutput,
-        inputLevel, inputVolume, setInputVolume, refreshDevices
+        inputLevel, testLevel, inputVolume, setInputVolume, refreshDevices,
+        cancelSettings
     };
+
+
 
 };

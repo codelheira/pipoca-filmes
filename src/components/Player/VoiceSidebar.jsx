@@ -23,8 +23,11 @@ const VoiceSidebar = ({
     const { 
         devices, selectedInput, setSelectedInput, 
         selectedOutput, setSelectedOutput, 
-        inputLevel, startMic, inputVolume, setInputVolume
+        inputLevel, testLevel, startMic, inputVolume, setInputVolume,
+        cancelSettings
     } = voiceState || {};
+
+
 
 
     const handleSave = () => {
@@ -38,9 +41,10 @@ const VoiceSidebar = ({
                 <P.SettingsOverlay>
                     <P.SidebarHeader>
                         <h3><FaCog /> Configurações de Voz</h3>
-                        <P.ControlBtn onClick={() => setShowSettings(false)} style={{ padding: '4px' }}>
+                        <P.ControlBtn onClick={() => { cancelSettings(); setShowSettings(false); }} style={{ padding: '4px' }}>
                             <FaTimes />
                         </P.ControlBtn>
+
                     </P.SidebarHeader>
 
                     <P.SettingsGroup>
@@ -85,8 +89,9 @@ const VoiceSidebar = ({
                             style={{ opacity: 1, width: '100%', height: '8px' }}
                         />
                         <P.SensitivityBar>
-                            <P.SensitivityFill level={inputLevel} />
+                            <P.SensitivityFill level={testLevel} />
                         </P.SensitivityBar>
+
                         <span style={{ fontSize: '0.7rem', color: '#666', marginTop: '5px', display: 'block' }}>
                             Ajuste o volume e fale para testar o nível de captura
                         </span>
