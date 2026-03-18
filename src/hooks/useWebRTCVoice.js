@@ -159,8 +159,10 @@ export const useWebRTCVoice = () => {
 
         } catch (e) {
             console.error('[WebRTC] Erro mic:', e);
+            setMicReady(false);
             return false;
         }
+
     }, [localUser, selectedInput, inputVolume, isMuted]); 
 
 

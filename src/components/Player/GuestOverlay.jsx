@@ -24,7 +24,8 @@ const GuestOverlay = ({
 
     if (isAutoplayBlocked) {
         return (
-            <P.BufferContainer visible={true} style={{ pointerEvents: 'auto', background: 'rgba(0,0,0,0.85)', width: '100%', height: '100%' }}>
+            <P.BufferContainer visible={true} style={{ pointerEvents: 'auto', background: 'rgba(0,0,0,0.85)', width: '100%', height: '100%', zIndex: 300 }}>
+
                 <P.ControlBtn 
                     onClick={onConnect}
                     style={{ 

@@ -106,12 +106,19 @@ const PipocaPlayer = ({ streamData, poster, slug, mediaTitle, tipo }) => {
     };
 
     const handleCreateRoom = async () => {
+        const micStarted = await startMic();
+        if (!micStarted) {
+            alert("Para criar uma sala de transmissão, é necessário permitir o uso do microfone.");
+            return;
+        }
+
         const generatedLink = await createTransmission(mediaTitle || slug);
         if (generatedLink) {
             setRoomLink(generatedLink);
             handleShare(generatedLink);
         }
     };
+
 
     const handleShare = async (link) => {
         if (!link) return;
@@ -592,6 +599,22 @@ const PipocaPlayer = ({ streamData, poster, slug, mediaTitle, tipo }) => {
             )}
             
             <HostSyncStatus role={role} waitingReason={waitingReason} readyGuests={readyGuests} participants={participants} />
+            
+            {/* Host Mic-Required Overlay */}
+            {isLiveMode && role === 'host' && !micReady && (
+                <P.BufferContainer visible={true} style={{ pointerEvents: 'auto', background: 'rgba(0,0,0,0.95)', zIndex: 300 }}>
+                    <FaMicrophoneSlash style={{ fontSize: '3rem', color: '#dc2626', marginBottom: '15px' }} />
+                    <P.BufferText style={{ fontSize: '1.2rem', textAlign: 'center', backgroundColor: 'transparent', maxWidth: '400px', lineHeight: '1.5' }}>
+                        Acesso ao Microfone Necessário <br/>
+                        <span style={{ fontSize: '0.9rem', color: '#888', fontWeight: 'normal', display: 'block', marginTop: '10px' }}>
+                            Como Host, você precisa autorizar o microfone para que o Watch2Gether funcione corretamente.
+                        </span>
+                    </P.BufferText>
+                    <P.ControlBtn onClick={() => startMic()} style={{ background: '#cae962', color: '#000', marginTop: '25px', padding: '12px 30px', borderRadius: '12px', fontWeight: 'bold' }}>
+                         AUTORIZAR AGORA
+                    </P.ControlBtn>
+                </P.BufferContainer>
+            )}
 
             <P.BigPlayBtn visible={!isPlaying && !(isLiveMode && role === 'guest')} onClick={(e) => { e.stopPropagation(); togglePlay(); }}>
                 <FaPlay style={{ marginLeft: '5px' }} />
