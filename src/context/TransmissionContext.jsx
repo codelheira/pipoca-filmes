@@ -225,9 +225,11 @@ export const TransmissionProvider = ({ children }) => {
 
     const leaveTransmission = () => {
         if (socketRef.current) {
+            socketRef.current.emit('leave_transmission');
             socketRef.current.disconnect();
             socketRef.current = null;
         }
+
         setIsLiveMode(false);
         setToken(null);
         setRole(null);
