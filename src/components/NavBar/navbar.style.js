@@ -253,6 +253,15 @@ N.Button = styled.button`
     display: none;
   }
 `
+N.LoginWrapper = styled.div`
+  display: flex;
+  align-items: center;
+  margin-left: 10px;
+  
+  @media only screen and (max-width: 578px) {
+    margin-left: 0;
+  }
+`
 N.Profile = styled.div`
   display: flex;
   padding-right: 1.4em;

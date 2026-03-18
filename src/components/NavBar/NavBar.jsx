@@ -229,16 +229,18 @@ const NavBar = () => {
             <N.ProfileImg src={user.picture || zorosmall} alt={user.name} />
           </N.ProfileItem>
         ) : (
-          <div style={{ display: 'flex', alignItems: 'center', marginLeft: '5px' }}>
+          <N.LoginWrapper>
             <GoogleLogin
               onSuccess={loginWithGoogle}
               onError={() => console.log('Login Failed')}
               useOneTap
-              type="icon"
-              shape="circle"
-              theme="outline"
+              shape="pill"
+              theme="filled_blue"
+              size="medium"
+              text="signin_with"
+              locale="pt_BR"
             />
-          </div>
+          </N.LoginWrapper>
         )}
       </N.Profile>
     </N.Nav>
