@@ -54,7 +54,14 @@ export const usePlayerSync = ({
                         next.add(data.user_id);
                         return next;
                     });
+                    
+                    // Se o host já estiver reproduzindo e receber um ready (Ex: convidado atrasado)
+                    // envia um tempo atual pro sync ser quase imediato
+                    if (!waitingReason && videoRef.current && !videoRef.current.paused) {
+                        sendSyncCommand('sync_time', videoRef.current.currentTime);
+                    }
                 }
+
                 return;
             }
 

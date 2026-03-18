@@ -436,8 +436,28 @@ const PipocaPlayer = ({ streamData, poster, slug, mediaTitle, tipo }) => {
         stopCast();
     };
 
+    // Guest Readiness Signal logic
+    const reportReadyIfPossible = useCallback(() => {
+        if (
+            isLiveMode && 
+            role === 'guest' && 
+            !isAutoplayBlocked && 
+            streamData?.url && 
+            videoRef.current?.readyState >= 3 && 
+            !videoRef.current.seeking
+        ) {
+            console.log("[Sync] Guest is READY to sync");
+            sendSyncCommand('guest_ready', localUser?.id);
+        }
+    }, [isLiveMode, role, isAutoplayBlocked, streamData?.url, localUser?.id, sendSyncCommand]);
+
+    useEffect(() => {
+        reportReadyIfPossible();
+    }, [isLiveMode, role, isAutoplayBlocked, streamData?.url, reportReadyIfPossible]);
+
     useEffect(() => {
         // Se estivermos em modo receptor de TV, o player deve sumir com os controles
+
         // e apenas reproduzir o que o celular mandar (Connect Room é o que faz o receptor ouvir comandos remotos)
         const urlParams = new URLSearchParams(window.location.search);
         const isReceiver = urlParams.get('mode') === 'tv_receiver';
@@ -474,11 +494,12 @@ const PipocaPlayer = ({ streamData, poster, slug, mediaTitle, tipo }) => {
                 onTimeUpdate={handleTimeUpdate}
                 onWaiting={() => { if (isPlaying) setIsBuffering(true); }}
                 onPlaying={() => setIsBuffering(false)}
-                onCanPlay={() => {
-                    if (isLiveMode && role === 'guest' && videoRef.current?.readyState >= 3 && !videoRef.current.seeking) {
-                        sendSyncCommand('guest_ready', localUser?.id);
-                    }
+                onCanPlay={reportReadyIfPossible}
+                onError={(e) => {
+                    console.error("[Player] Erro crítico no carregamento do vídeo:", e);
+                    setIsBuffering(false);
                 }}
+
                 crossOrigin="anonymous" preload="auto" playsInline webkit-playsinline="true"
                 onPlay={() => {
                     setIsPlaying(true);
