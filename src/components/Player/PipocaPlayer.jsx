@@ -48,7 +48,9 @@ const PipocaPlayer = ({ streamData, poster, slug, mediaTitle, tipo }) => {
 
     // TV Link UI State
     const [isCodeModalOpen, setIsCodeModalOpen] = useState(false);
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false); // Novo
     const [tvCode, setTvCode] = useState('');
+
     
     // Sync Hook
     const { 
@@ -695,6 +697,35 @@ const PipocaPlayer = ({ streamData, poster, slug, mediaTitle, tipo }) => {
                     </P.Modal>
                 </P.Overlay>
             )}
+            
+            {/* Modal de Confirmação Watch2Gether */}
+            {isCreateModalOpen && (
+                <P.Overlay style={{ zIndex: 3000 }}>
+                    <P.Modal onClick={e => e.stopPropagation()} style={{ padding: '30px', maxWidth: '420px', textAlign: 'center' }}>
+                        <div style={{ fontSize: '4rem', marginBottom: '20px' }}>🍿</div>
+                        <h2 style={{ marginBottom: '15px', fontSize: '1.6rem' }}>Criar Sala de Transmissão?</h2>
+                        <p style={{ color: '#aaa', marginBottom: '30px', fontSize: '1rem', lineHeight: '1.5' }}>
+                            Ao criar uma sala, você poderá convidar amigos para assistir este filme sincronizado com você em tempo real! 
+                            <br/><br/>
+                            <span style={{ fontSize: '0.85rem', opacity: 0.7 }}>O acesso ao microfone será solicitado para habilitar o bate-papo.</span>
+                        </p>
+                        
+                        <div style={{ display: 'flex', gap: '15px' }}>
+                            <P.CloseBtn onClick={() => setIsCreateModalOpen(false)} style={{ flex: 1, backgroundColor: '#333' }}>Agora não</P.CloseBtn>
+                            <P.ControlBtn 
+                                onClick={() => {
+                                    setIsCreateModalOpen(false);
+                                    handleCreateRoom();
+                                }} 
+                                style={{ flex: 1.5, backgroundColor: '#cae962', color: '#000', borderRadius: '10px', fontWeight: 'bold' }}
+                            >
+                                Criar Sala
+                            </P.ControlBtn>
+                        </div>
+                    </P.Modal>
+                </P.Overlay>
+            )}
+
 
 
 
@@ -742,12 +773,13 @@ const PipocaPlayer = ({ streamData, poster, slug, mediaTitle, tipo }) => {
                                 <P.ControlBtn onClick={leaveTransmission} style={{ color: '#dc2626' }}><FaTimes /></P.ControlBtn>
                             </>
                         ) : (
-                            <P.ControlBtn onClick={handleCreateRoom} title="Criar Sala Watch2Gether">
+                            <P.ControlBtn onClick={() => setIsCreateModalOpen(true)} title="Criar Sala Watch2Gether">
                                 <svg stroke="currentColor" fill="currentColor" strokeWidth="0" viewBox="0 0 16 16" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg">
                                     <path d="M3.05 3.05a7 7 0 0 0 0 9.9.5.5 0 0 1-.707.707 8 8 0 0 1 0-11.314.5.5 0 0 1 .707.707zm2.122 2.122a4 4 0 0 0 0 5.656.5.5 0 1 1-.708.708 5 5 0 0 1 0-7.072.5.5 0 0 1 .708.708zm5.656-.708a.5.5 0 0 1 .708 0 5 5 0 0 1 0 7.072.5.5 0 1 1-.708-.708 4 4 0 0 0 0-5.656.5.5 0 0 1 0-.708zm2.122-2.12a.5.5 0 0 1 .707 0 8 8 0 0 1 0 11.313.5.5 0 0 1-.707-.707 7 7 0 0 0 0-9.9.5.5 0 0 1 0-.707zM10 8a2 2 0 1 1-4 0 2 2 0 0 1 4 0z"></path>
                                 </svg>
                             </P.ControlBtn>
                         )}
+
 
                         <P.ControlBtn 
                             onClick={handleCastClick} 
