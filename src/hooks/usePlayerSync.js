@@ -17,12 +17,22 @@ export const usePlayerSync = ({
     
     const ignoreNextSyncRef = useRef(false);
     const prevParticipantsCount = useRef(participants?.length || 0);
+    const wasPlayingRef = useRef(false); // Novo: lembra se o host estava dando play
+
 
     const waitingPause = useCallback((reason, durationMs = 20000) => {
         if (!videoRef.current || role !== 'host') return;
         
-        videoRef.current.pause();
-        sendSyncCommand('sync_seek_waiting', videoRef.current.currentTime);
+        wasPlayingRef.current = !videoRef.current.paused;
+        
+        if (wasPlayingRef.current) {
+            videoRef.current.pause();
+            sendSyncCommand('sync_seek_waiting', videoRef.current.currentTime);
+        } else {
+            // Se já estava pausado, enviamos apenas um pause normal para o convidado
+            // Assim ele vê a mensagem de "Host Pausado" em vez de "Sincronizando"
+            sendSyncCommand('sync_pause', videoRef.current.currentTime);
+        }
         
         setReadyGuests(new Set());
         setWaitingReason(reason);
@@ -31,6 +41,7 @@ export const usePlayerSync = ({
             setWaitingReason(curr => curr === reason ? null : curr);
         }, durationMs);
     }, [videoRef, role, sendSyncCommand]);
+
 
     // Host heartbeat
     useEffect(() => {
@@ -120,12 +131,15 @@ export const usePlayerSync = ({
         const guestCount = participants.length - 1;
         if (guestCount <= 0 || readyGuests.size >= guestCount) {
             setWaitingReason(null);
-            if (videoRef.current) {
+            
+            // Só retomamos o play se o host estava dando play quando a espera começou
+            if (wasPlayingRef.current && videoRef.current) {
                 videoRef.current.play().catch(() => {});
                 sendSyncCommand('sync_play', videoRef.current.currentTime);
             }
         }
     }, [readyGuests, participants, role, waitingReason, sendSyncCommand, videoRef]);
+
 
     // Detect new guests
     useEffect(() => {
