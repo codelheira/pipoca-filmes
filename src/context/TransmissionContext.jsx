@@ -17,6 +17,7 @@ export const TransmissionProvider = ({ children }) => {
     const [title, setTitle] = useState('');
     const [localUser, setLocalUser] = useState(null);
     const [isSocketConnected, setIsSocketConnected] = useState(false);
+    const [isConnecting, setIsConnecting] = useState(false);
     const [remoteMutedUsers, setRemoteMutedUsers] = useState({}); // { userId: boolean }
 
 
@@ -147,6 +148,7 @@ export const TransmissionProvider = ({ children }) => {
             socketRef.current.disconnect();
         }
 
+        setIsConnecting(true);
         const socket = io(SOCKET_URL, {
             query: {
                 token: roomToken,
@@ -158,16 +160,19 @@ export const TransmissionProvider = ({ children }) => {
         socket.on('connect', () => {
             console.log("Socket.io Conectado");
             setIsSocketConnected(true);
+            setIsConnecting(false);
         });
 
         socket.on('connect_error', (err) => {
             console.error("Erro na conexão do socket:", err);
             setIsSocketConnected(false);
+            setIsConnecting(false);
         });
         
         socket.on('disconnect', () => {
             console.log("Socket.io Desconectado");
             setIsSocketConnected(false);
+            setIsConnecting(false);
         });
 
         socket.on('state', (data) => {
@@ -291,6 +296,7 @@ export const TransmissionProvider = ({ children }) => {
             sendSignal,
             connectRoom,
             isSocketConnected,
+            isConnecting,
             remoteMutedUsers,
             user,
             localUser

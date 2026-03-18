@@ -39,7 +39,7 @@ const PipocaPlayer = ({ streamData, poster, slug, mediaTitle, tipo }) => {
     // Contexts
     const { 
         isLiveMode, role, sendSyncCommand, participants, createTransmission, 
-        leaveTransmission, localUser, connectRoom, remoteMutedUsers, isSocketConnected 
+        leaveTransmission, localUser, connectRoom, remoteMutedUsers, isSocketConnected, isConnecting
     } = useTransmission();
 
 
@@ -607,7 +607,7 @@ const PipocaPlayer = ({ streamData, poster, slug, mediaTitle, tipo }) => {
             <HostSyncStatus role={role} waitingReason={waitingReason} readyGuests={readyGuests} participants={participants} />
             
             {/* Connection Error Overlay for Guests */}
-            {isLiveMode && role === 'guest' && !isSocketConnected && !isAutoplayBlocked && (
+            {isLiveMode && role === 'guest' && !isSocketConnected && !isConnecting && !isAutoplayBlocked && (
                 <P.BufferContainer visible={true} style={{ pointerEvents: 'auto', background: 'rgba(0,0,0,0.95)', zIndex: 400 }}>
                     <FaSync className="fa-spin" style={{ fontSize: '3rem', color: '#dc2626', marginBottom: '15px' }} />
                     <P.BufferText style={{ fontSize: '1.2rem', textAlign: 'center', backgroundColor: 'transparent', maxWidth: '400px', lineHeight: '1.5' }}>
@@ -625,6 +625,14 @@ const PipocaPlayer = ({ streamData, poster, slug, mediaTitle, tipo }) => {
                             SAIR DA SALA
                         </P.ControlBtn>
                     </div>
+                </P.BufferContainer>
+            )}
+
+            {/* Connecting Overlay */}
+            {isConnecting && (
+                <P.BufferContainer visible={true} style={{ background: 'rgba(0,0,0,0.9)', zIndex: 450 }}>
+                    <P.Spinner />
+                    <P.BufferText>Estabelecendo conexão estável...</P.BufferText>
                 </P.BufferContainer>
             )}
             
