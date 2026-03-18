@@ -202,6 +202,7 @@ export const TransmissionProvider = ({ children }) => {
 
         // Eventos de WebRTC Signaling
         socket.on('signal', (data) => {
+            console.log("[Socket] Sinal recebido do servidor:", { from: data.from, target: data.target, signalType: data.signalData?.type });
             const customEvent = new CustomEvent('transmission_msg', { detail: { type: 'signal', ...data } });
             window.dispatchEvent(customEvent);
         });

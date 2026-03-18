@@ -289,10 +289,13 @@ export const useWebRTCVoice = () => {
 
         peer.onnegotiationneeded = async () => {
             try {
-                console.log(`[WebRTC] Negotiation needed para ${targetId}`);
+                // Se já estivermos criando uma oferta, ignoramos este evento para evitar loops
+                if (makingOfferRef.current[targetId]) return;
+                
+                console.log(`[WebRTC] Negotiation needed para ${targetId}. SignalingState: ${peer.signalingState}`);
                 makingOfferRef.current[targetId] = true;
                 
-                // Força transceiver audio para Safari
+                // Força transceiver audio para Safari/Mobile se não houver tracks locais ainda
                 if (peer.getTransceivers().length === 0) {
                     peer.addTransceiver('audio', { direction: 'sendrecv' });
                 }
@@ -314,7 +317,7 @@ export const useWebRTCVoice = () => {
         };
 
         peer.ontrack = (event) => {
-            console.log(`[WebRTC] Track recebida de ${targetId}`);
+            console.log(`[WebRTC] Track recebida de ${targetId}. Stream ID: ${event.streams[0]?.id}`);
             const stream = event.streams[0] || new MediaStream([event.track]);
             setAudioStreams(prev => ({ ...prev, [targetId]: stream }));
             setupVAD(targetId, stream, false);
@@ -350,8 +353,10 @@ export const useWebRTCVoice = () => {
         const myId = localUser?.id;
         if (!myId) return;
 
-        // Polite Peer: ID maior cede
-        const isPolite = myId > from;
+        // Polite Peer: ID maior cede. Usamos String() para garantir comparação correta entre IDs (pode haver mix de string/número)
+        const isPolite = String(myId).toLowerCase() > String(from).toLowerCase();
+        
+        console.log(`[WebRTC] Sinal recebido de ${from} (${signalData.type}). Meu ID: ${myId}. Polite: ${isPolite}`);
 
         try {
             let peer = peersRef.current[from];
@@ -437,10 +442,17 @@ export const useWebRTCVoice = () => {
 
         participants.forEach(p => {
             if (p.id !== myId && !peersRef.current[p.id]) {
-                // Removemos o bloqueio de ID menor/maior para criação inicial
-                // O Perfect Negotiation se encarrega de estabilizar se ambos criarem ao mesmo tempo.
-                // Isso ajuda em dispositivos móveis que podem demorar a trigar onnegotiationneeded.
-                createPeer(p.id);
+                // Para conexões entre convidados, usamos uma regra determinística para quem inicia
+                // Isso reduz colisões e problemas em dispositivos móveis.
+                // O Host sempre aceita/inicia conforme necessário, mas entre guests o ID menor inicia.
+                const shouldInitiate = role === 'host' || p.role === 'host' || String(myId).toLowerCase() < String(p.id).toLowerCase();
+                
+                if (shouldInitiate) {
+                    console.log(`[WebRTC] Iniciando conexão com ${p.id} (Eu sou ${role}, Ele é ${p.role})`);
+                    createPeer(p.id);
+                } else {
+                    console.log(`[WebRTC] Aguardando conexão de ${p.id} (Eu sou ${role}, Ele é ${p.role})`);
+                }
             }
         });
     }, [participants, localUser?.id, micReady, createPeer]);
