@@ -226,27 +226,19 @@ const NavBar = () => {
         </N.ProfileItem>
         {user ? (
           <N.ProfileItem onClick={logout} title={`Logado como ${user.name} (Clique para sair)`}>
-            <N.ProfileImg src={user.picture} alt={user.name} />
+            <N.ProfileImg src={user.picture || zorosmall} alt={user.name} />
           </N.ProfileItem>
         ) : (
-          <>
-            {/* 
-              Implementação do Google Login (Comentado até que as credenciais sejam configuradas em .env)
-              <div style={{ display: 'flex', alignItems: 'center', marginLeft: '5px' }}>
-                <GoogleLogin
-                  onSuccess={loginWithGoogle}
-                  onError={() => console.log('Login Failed')}
-                  useOneTap
-                  type="icon"
-                  shape="circle"
-                  theme="filled_black"
-                />
-              </div> 
-            */}
-            <N.ProfileItem>
-              <N.ProfileImg src={zorosmall} alt="Profile" />
-            </N.ProfileItem>
-          </>
+          <div style={{ display: 'flex', alignItems: 'center', marginLeft: '5px' }}>
+            <GoogleLogin
+              onSuccess={loginWithGoogle}
+              onError={() => console.log('Login Failed')}
+              useOneTap
+              type="icon"
+              shape="circle"
+              theme="outline"
+            />
+          </div>
         )}
       </N.Profile>
     </N.Nav>
