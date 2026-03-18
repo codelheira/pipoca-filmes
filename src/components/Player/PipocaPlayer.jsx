@@ -37,7 +37,11 @@ const PipocaPlayer = ({ streamData, poster, slug, mediaTitle, tipo }) => {
     const initialSeekDone = useRef(false)
     
     // Contexts
-    const { isLiveMode, role, sendSyncCommand, participants, createTransmission, leaveTransmission, localUser, connectRoom, remoteMutedUsers } = useTransmission();
+    const { 
+        isLiveMode, role, sendSyncCommand, participants, createTransmission, 
+        leaveTransmission, localUser, connectRoom, remoteMutedUsers, isSocketConnected 
+    } = useTransmission();
+
 
     const voiceState = useWebRTCVoice();
     const { isMuted: voiceMuted, toggleMute: toggleVoiceMute, audioStreams, speakingUsers, micReady, startMic } = voiceState;
@@ -599,6 +603,28 @@ const PipocaPlayer = ({ streamData, poster, slug, mediaTitle, tipo }) => {
             )}
             
             <HostSyncStatus role={role} waitingReason={waitingReason} readyGuests={readyGuests} participants={participants} />
+            
+            {/* Connection Error Overlay for Guests */}
+            {isLiveMode && role === 'guest' && !isSocketConnected && !isAutoplayBlocked && (
+                <P.BufferContainer visible={true} style={{ pointerEvents: 'auto', background: 'rgba(0,0,0,0.95)', zIndex: 400 }}>
+                    <FaSync className="fa-spin" style={{ fontSize: '3rem', color: '#dc2626', marginBottom: '15px' }} />
+                    <P.BufferText style={{ fontSize: '1.2rem', textAlign: 'center', backgroundColor: 'transparent', maxWidth: '400px', lineHeight: '1.5' }}>
+                        Falha na Conexão com a Sala <br/>
+                        <span style={{ fontSize: '0.9rem', color: '#888', fontWeight: 'normal', display: 'block', marginTop: '10px' }}>
+                            Não foi possível estabelecer uma conexão estável com o servidor de sincronização. 
+                            Verifique sua internet ou tente recarregar a página.
+                        </span>
+                    </P.BufferText>
+                    <div style={{ display: 'flex', gap: '10px', marginTop: '25px' }}>
+                        <P.ControlBtn onClick={() => window.location.reload()} style={{ background: '#cae962', color: '#000', padding: '12px 25px', borderRadius: '12px', fontWeight: 'bold' }}>
+                            RECARREGAR PÁGINA
+                        </P.ControlBtn>
+                        <P.ControlBtn onClick={leaveTransmission} style={{ background: 'rgba(255,255,255,0.1)', color: '#fff', padding: '12px 25px', borderRadius: '12px', fontWeight: 'bold' }}>
+                            SAIR DA SALA
+                        </P.ControlBtn>
+                    </div>
+                </P.BufferContainer>
+            )}
             
             {/* Host Mic-Required Overlay */}
             {isLiveMode && role === 'host' && !micReady && (

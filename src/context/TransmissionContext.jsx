@@ -160,11 +160,22 @@ export const TransmissionProvider = ({ children }) => {
             setIsSocketConnected(true);
         });
 
+        socket.on('connect_error', (err) => {
+            console.error("Erro na conexão do socket:", err);
+            setIsSocketConnected(false);
+        });
+        
+        socket.on('disconnect', () => {
+            console.log("Socket.io Desconectado");
+            setIsSocketConnected(false);
+        });
 
         socket.on('state', (data) => {
             setParticipants(data.participants);
             setTitle(data.title);
         });
+
+
 
         socket.on('room_closed', () => {
             alert('O Host encerrou a transmissão.');
