@@ -667,19 +667,31 @@ P.Modal = styled.div`
   background: #1a1a1c;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 20px;
-  padding: 40px;
+  padding: 30px;
   width: 90%;
   max-width: 500px;
+  max-height: 95%;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
   animation: slideUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+  /* Estilização básica da scrollbar interna se necessário */
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+  }
 
   @keyframes slideUp {
     from { transform: translateY(30px); opacity: 0; }
     to { transform: translateY(0); opacity: 1; }
   }
 `;
+
 
 P.CloseBtn = styled.button`
   background: rgba(255, 255, 255, 0.1);

@@ -670,9 +670,9 @@ const PipocaPlayer = ({ streamData, poster, slug, mediaTitle, tipo }) => {
             {isCodeModalOpen && (
                 <P.Overlay style={{ zIndex: 3000 }}>
                     <P.Modal onClick={e => e.stopPropagation()} style={{ padding: '30px', maxWidth: '400px', textAlign: 'center' }}>
-                        <FaTv style={{ fontSize: '3rem', color: '#cae962', marginBottom: '20px' }} />
-                        <h2 style={{ marginBottom: '15px' }}>Parear Smart TV</h2>
-                        <p style={{ color: '#aaa', marginBottom: '25px', fontSize: '0.9rem' }}>
+                        <FaTv style={{ fontSize: '2.5rem', color: '#cae962', marginBottom: '15px' }} />
+                        <h2 style={{ marginBottom: '10px', fontSize: '1.4rem' }}>Parear Smart TV</h2>
+                        <p style={{ color: '#aaa', marginBottom: '20px', fontSize: '0.85rem' }}>
                             Digite o código que aparece na tela da sua TV em <strong>pipoca.me/tv</strong>
                         </p>
                         
@@ -683,10 +683,10 @@ const PipocaPlayer = ({ streamData, poster, slug, mediaTitle, tipo }) => {
                             value={tvCode}
                             onChange={(e) => setTvCode(e.target.value)}
                             style={{ 
-                                width: '100%', padding: '15px', borderRadius: '10px', 
+                                width: '100%', padding: '12px', borderRadius: '10px', 
                                 background: '#111', border: '2px solid #cae962', color: '#fff',
-                                fontSize: '2rem', textAlign: 'center', marginBottom: '25px',
-                                letterSpacing: '5px'
+                                fontSize: '1.6rem', textAlign: 'center', marginBottom: '20px',
+                                letterSpacing: '4px'
                             }}
                         />
 
@@ -694,6 +694,7 @@ const PipocaPlayer = ({ streamData, poster, slug, mediaTitle, tipo }) => {
                             <P.CloseBtn onClick={() => setIsCodeModalOpen(false)} style={{ flex: 1, backgroundColor: '#333' }}>Cancelar</P.CloseBtn>
                             <P.ControlBtn onClick={handlePairTV} style={{ flex: 1, backgroundColor: '#cae962', color: '#000', borderRadius: '10px' }}>Conectar</P.ControlBtn>
                         </div>
+
                     </P.Modal>
                 </P.Overlay>
             )}
@@ -701,28 +702,29 @@ const PipocaPlayer = ({ streamData, poster, slug, mediaTitle, tipo }) => {
             {/* Modal de Confirmação Watch2Gether */}
             {isCreateModalOpen && (
                 <P.Overlay style={{ zIndex: 3000 }}>
-                    <P.Modal onClick={e => e.stopPropagation()} style={{ padding: '30px', maxWidth: '420px', textAlign: 'center' }}>
-                        <div style={{ fontSize: '4rem', marginBottom: '20px' }}>🍿</div>
-                        <h2 style={{ marginBottom: '15px', fontSize: '1.6rem' }}>Criar Sala de Transmissão?</h2>
-                        <p style={{ color: '#aaa', marginBottom: '30px', fontSize: '1rem', lineHeight: '1.5' }}>
-                            Ao criar uma sala, você poderá convidar amigos para assistir este filme sincronizado com você em tempo real! 
+                    <P.Modal onClick={e => e.stopPropagation()} style={{ padding: '25px', maxWidth: '380px', textAlign: 'center' }}>
+                        <div style={{ fontSize: '3rem', marginBottom: '15px' }}>🍿</div>
+                        <h2 style={{ marginBottom: '10px', fontSize: '1.4rem' }}>Criar Sala?</h2>
+                        <p style={{ color: '#aaa', marginBottom: '20px', fontSize: '0.9rem', lineHeight: '1.5' }}>
+                            Convide amigos para assistir sincronizado com você em tempo real! 
                             <br/><br/>
-                            <span style={{ fontSize: '0.85rem', opacity: 0.7 }}>O acesso ao microfone será solicitado para habilitar o bate-papo.</span>
+                            <span style={{ fontSize: '0.8rem', opacity: 0.7 }}>O acesso ao microfone será solicitado.</span>
                         </p>
                         
-                        <div style={{ display: 'flex', gap: '15px' }}>
-                            <P.CloseBtn onClick={() => setIsCreateModalOpen(false)} style={{ flex: 1, backgroundColor: '#333' }}>Agora não</P.CloseBtn>
+                        <div style={{ display: 'flex', gap: '12px' }}>
+                            <P.CloseBtn onClick={() => setIsCreateModalOpen(false)} style={{ flex: 1, backgroundColor: '#333', fontSize: '0.9rem' }}>Agora não</P.CloseBtn>
                             <P.ControlBtn 
                                 onClick={() => {
                                     setIsCreateModalOpen(false);
                                     handleCreateRoom();
                                 }} 
-                                style={{ flex: 1.5, backgroundColor: '#cae962', color: '#000', borderRadius: '10px', fontWeight: 'bold' }}
+                                style={{ flex: 1.5, backgroundColor: '#cae962', color: '#000', borderRadius: '10px', fontWeight: 'bold', fontSize: '0.9rem' }}
                             >
                                 Criar Sala
                             </P.ControlBtn>
                         </div>
                     </P.Modal>
+
                 </P.Overlay>
             )}
 
