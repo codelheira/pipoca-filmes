@@ -32,8 +32,10 @@ export const useWebRTCVoice = () => {
     const [inputLevel, setInputLevel] = useState(0);
     const [testLevel, setTestLevel] = useState(0); 
     const [inputVolume, setInputVolume] = useState(1); 
+    const [isTesting, setIsTesting] = useState(false); // Novo: flag para o UI controlar o teste
     const [activeInput, setActiveInput] = useState('default');
     const [activeVolume, setActiveVolume] = useState(1);
+
 
 
 
@@ -472,11 +474,22 @@ export const useWebRTCVoice = () => {
 
     // Lógica de Preview/Teste de Microfone
     useEffect(() => {
-        // Só rodamos o teste se o selectedInput for diferente do que está no stream atual
-        // OU se o usuário está com o modal aberto (podemos receber essa info por prop se quisermos, 
-        // mas o gatilho de mudar o selectedInput já é suficiente).
+        // Só rodamos o teste se o UI permitir explicitamente (modal aberto)
+        if (!isTesting) {
+            setTestLevel(0);
+            if (testStreamRef.current) {
+                testStreamRef.current.getTracks().forEach(t => t.stop());
+                testStreamRef.current = null;
+            }
+            return;
+        }
+        
+        // Se isLiveMode for falso, também não testamos
+        if (!isLiveMode) return;
         
         let active = true;
+
+
         
         const runTest = async () => {
             if (testStreamRef.current) {
@@ -551,8 +564,9 @@ export const useWebRTCVoice = () => {
         isMuted, toggleMute, audioStreams, speakingUsers, micReady, startMic,
         devices, selectedInput, setSelectedInput, selectedOutput, setSelectedOutput,
         inputLevel, testLevel, inputVolume, setInputVolume, refreshDevices,
-        cancelSettings
+        cancelSettings, isTesting, setIsTesting
     };
+
 
 
 

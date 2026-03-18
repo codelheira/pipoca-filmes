@@ -65,6 +65,15 @@ export const TransmissionProvider = ({ children }) => {
     }, []);
 
     const joinTransmission = async (joinToken) => {
+        // Suporte especial para TV Link (Pareamento por Código)
+        // Essas salas são efêmeras e gerenciadas dinamicamente pelo socket
+        if (joinToken && joinToken.startsWith('tv_link_')) {
+            setToken(joinToken);
+            setRole('host'); // No modo TV, ela é o receptor (host da própria tela)
+            setIsLiveMode(true);
+            return true;
+        }
+
         try {
             const storedToken = localStorage.getItem('token');
             const userId = getUserId();

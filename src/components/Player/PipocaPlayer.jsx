@@ -438,14 +438,15 @@ const PipocaPlayer = ({ streamData, poster, slug, mediaTitle, tipo }) => {
 
     useEffect(() => {
         // Se estivermos em modo receptor de TV, o player deve sumir com os controles
-        // e apenas reproduzir o que o celular mandar.
+        // e apenas reproduzir o que o celular mandar (Connect Room é o que faz o receptor ouvir comandos remotos)
         const urlParams = new URLSearchParams(window.location.search);
         const isReceiver = urlParams.get('mode') === 'tv_receiver';
         
         if (isReceiver && videoRef.current) {
+            connectRoom(); // Inicia o recebimento de comandos (Play/Pause/Seek) via remoto
             videoRef.current.play().catch(e => console.log("Auto-play blocked, waiting interaction"));
         }
-    }, [streamData]);
+    }, [streamData, connectRoom]);
 
     useEffect(() => {
         const handleFsChange = () => setIsFullscreen(!!(document.fullscreenElement || document.webkitFullscreenElement));

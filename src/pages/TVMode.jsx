@@ -36,7 +36,7 @@ const TVMode = () => {
             if (data.type === 'tv_play') {
                  // Recebeu o comando! Redireciona para o player da TV
                  const { slug, tipo, time } = data.payload;
-                 navigate(`/watch/${tipo}/${slug}?t=${time}&mode=tv_receiver&room=tv_link_${code}`);
+                 navigate(`/watch/${tipo}/${slug}?t=${time}&mode=tv_receiver&transmission=tv_link_${code}`);
             }
         });
 

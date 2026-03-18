@@ -24,8 +24,13 @@ const VoiceSidebar = ({
         devices, selectedInput, setSelectedInput, 
         selectedOutput, setSelectedOutput, 
         inputLevel, testLevel, startMic, inputVolume, setInputVolume,
-        cancelSettings
+        cancelSettings, setIsTesting
     } = voiceState || {};
+
+    React.useEffect(() => {
+        if (setIsTesting) setIsTesting(showSettings);
+    }, [showSettings, setIsTesting]);
+
 
 
 
