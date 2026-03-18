@@ -531,19 +531,28 @@ const PipocaPlayer = ({ streamData, poster, slug, mediaTitle, tipo }) => {
                 isLiveMode={isLiveMode} role={role} 
                 isAutoplayBlocked={isAutoplayBlocked} 
                 isGuestWaitingSync={isGuestWaitingSync}
-                onConnect={() => {
-                    // Agora a entrada no Socket (e na lista de participantes) só acontece aqui!
+                onConnect={async () => {
+                    // Agora exigimos o microfone para autorizar a conexão do Guest
+                    const micStarted = await startMic();
+                    
+                    if (!micStarted) {
+                        alert("Para participar da transmissão, é necessário permitir o uso do microfone.");
+                        return;
+                    }
+
+                    // Se o mic foi autorizado, procedemos com a conexão
                     connectRoom();
                     
                     videoRef.current?.play().then(() => {
                         handleInteraction();
                         setIsPlaying(true);
-                        startMic().catch(e => console.error("Erro mic:", e));
                     }).catch(() => {
+                        // Mesmo que o play falhe (ex: ainda bloqueado pelo browser), 
+                        // liberamos o estado de interação para o usuário tentar play manual
                         handleInteraction();
-                        startMic().catch(e => console.error("Erro mic:", e));
                     });
                 }}
+
 
             />
 
